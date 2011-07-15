@@ -1,0 +1,87 @@
+<?php
+
+function kprojectreports_schema($value='') {
+  $schema['kprojectreports_schedules'] = array(
+    'description' => t('Kproject report schedules'),
+    'fields' => array(
+      'krid' => array(
+        'description' => t('The primary identifier for a scheduled report.'),
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE
+      ),
+      'title' => array(
+        'description' => t('The report title.'),
+        'type' => 'char',
+        'length' => 255,
+      ),
+      'frequency' => array(
+        'description' => t('The frequency at which to run the report.'),
+        'type' => 'char',
+        'length' => 16,
+      ),
+      'report' => array(
+        'description' => t('The name of the report to run.'),
+        'type' => 'char',
+        'length' => 255,
+      ),
+      'mail' => array(
+        'description' => t('Where to send the report.'),
+        'type' => 'char',
+        'length' => 255,
+      ),
+      'format' => array(
+        'description' => t('Report format.'),
+        'type' => 'char',
+        'length' => 16,
+      ),
+      'lastrun' => array(
+        'description' => t('Report last run timestamp.'),
+        'type' => 'int',
+        'not null' => FALSE,
+        'disp-width' => '11',
+      ),
+      'options' => array(
+        'description' => t('Report options, may be defined by other modules.'),
+        'type' => 'text',
+      ),
+    ),
+
+    'primary key' => array('krid'),
+  );
+
+  return $schema;
+}
+
+function kprojectreports_install() {
+  drupal_install_schema('kprojectreports');
+}
+
+function kprojectreports_uninstall() {
+  drupal_uninstall_schema('kprojectreports');
+}
+
+function kprojectreports_update_6100() {
+  drupal_install_schema('kprojectreports');
+}
+
+/**
+ * Add "lastrun" field, so that cron knows whether we have run already today
+ */
+function kprojectreports_update_6101() {
+  $ret = array();
+  db_add_field(&$ret, 'kprojectreports_schedules', 'lastrun', array('description' => t('Report last run timestamp.'), 'type' => 'int', 'not null' => FALSE, 'disp-width' => '11'));
+
+  return $ret;
+}
+
+/**
+ * Add "options" field, so that specific reports or other modules can define other options
+ */
+function kprojectreports_update_6102() {
+  $ret = array();
+  db_add_field(&$ret, 'kprojectreports_schedules', 'options', array('description' => t('Report options, may be defined by other modules.'), 'type' => 'text'));
+
+  return $ret;
+}
+
