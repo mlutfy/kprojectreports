@@ -63,6 +63,16 @@ function kprojectreports_cron() {
     }
 
     if ($timetorun && $date_start && $date_end && $report->mail) {
+      // this is mainly to protect against cloning of sites during webdev
+      $limithost = variable_get('kprojectreports_limithost', '');
+      $servername = $_SERVER['HTTP_HOST'];
+      $emailfrom  = variable_get('site_mail', 'FIXME@FIXME.org');
+
+      if ($limithost && $limithost != $servername) {
+        watchdog('kprojectreports', 'Not mailing the report because the kprojectreports_limithost does not match the current host: ' . $limithost . ' vs ' . $servername);
+        return;
+      }
+
       $reportfunc = $report->report; // ex: kprojectreports_timespent
       include_once(drupal_get_path('module', 'kprojectreports') .'/' . $report->report . '.inc.php');
       $report->options = unserialize($report->options);
