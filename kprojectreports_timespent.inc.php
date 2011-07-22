@@ -41,8 +41,13 @@ function kprojectreports_timespent_global($date_start, $date_end) {
     foreach ($report_lines as $client_name => $tmp) {
       foreach ($tmp as $key => $val) {
         if (! in_array($val['client_title'], $exclude_clients)) {
-          $pct_period = $val['hours_period'] / $val['estimate'] * 100;
-	  $pct_total  = $val['hours_total'] / $val['estimate'] * 100;
+          if ($val['estimate'] > 0) {
+            $pct_period = $val['hours_period'] / $val['estimate'] * 100;
+            $pct_total  = $val['hours_total'] / $val['estimate'] * 100;
+          } else {
+            $pct_period = 0;
+            $pct_total = 0;
+          }
 
           $output .= '<tr>'
                    . '<td>' . $val['client_title'] . '</td>'
@@ -50,7 +55,7 @@ function kprojectreports_timespent_global($date_start, $date_end) {
                    . '<td>' . sprintf('%.2f', $val['hours_period']) . '</td>'
                    . '<td>' . sprintf('%.2f', $val['hours_total']) . '</td>'
                    . '<td ' . ($val['estimate'] ? '' : 'style="color: red;"') . '>' . sprintf('%.2f', $val['estimate']) . '</td>'
-                   . '<td ' . ($pct_total > 100 ? 'style="color: red;"' : ($pct_total > 80 ? 'style="color: yellow;"' : '')) . '>'
+                   . '<td ' . ($pct_total > 100 ? 'style="color: red;"' : ($pct_total > 80 ? 'style="color: #AAAA00;"' : '')) . '>'
                      . sprintf('%.2f', $pct_period) . '%'
                      . ' / '
                      . sprintf('%.2f', $pct_total) . '%' 
@@ -73,13 +78,18 @@ function kprojectreports_timespent_global($date_start, $date_end) {
   }
 
   $output .= '</table>';
-  $output .= "<p>" . "TOTAL INCOMES: " . sprintf('%.2f', $totalincomes) . " h" . "</p>";
+  $output .= "<p><strong>" . "Total incomes: " . sprintf('%.2f', $totalincomes) . " h" . "</strong></p>";
 
   //
   // Expenses
   //
   $totalexpenses = 0;
   $output .= '<table>';
+  $output .= '<tr>'
+           . '<th width="300">' . t('Client')     . '</th>'
+           . '<th>' . t('Contract')   . '</th>'
+           . '<th style="text-align: right;">' . t('Worked') . '</th>'
+           . '</tr>';
 
   if ($exclude_mode == 'expenses') {
     // List all, except those excluded
@@ -104,8 +114,8 @@ function kprojectreports_timespent_global($date_start, $date_end) {
   }
 
   $output .= '</table>';
-  $output .= "<p>" . "TOTAL EXPENSES: " . sprintf('%.2f', $totalexpenses) . " h" . "</p>";
-  $output .= "<p>" . "TOTAL HOURS: " . sprintf('%.2f', $totalincomes + $totalexpenses) . " h" . "</p>";
+  $output .= "<p><strong>" . "Total expenses: " . sprintf('%.2f', $totalexpenses) . " h" . "</strong></p>";
+  $output .= "<p><strong>" . "TOTAL HOURS: " . sprintf('%.2f', $totalincomes + $totalexpenses) . " h" . "</strong></p>";
 
   return $output;
 }
@@ -176,7 +186,7 @@ function kprojectreports_timespent_user($date_start, $date_end) {
   while ($user = db_fetch_object($result)) {
     $user = user_load($user->uid);
 
-    $output .= "<h3>" . "********************** " . $user->name . " ******************************" . "</h3>";
+    $output .= "<h1>" . $user->name . "</h1>";
 
     $report_lines = kprojectreports_timespent_get_summary_by_user($user->uid, $date_start, $date_end);
 
@@ -185,13 +195,18 @@ function kprojectreports_timespent_user($date_start, $date_end) {
     //
     $totalincomes = 0;
     $output .= '<table>';
+    $output .= '<tr>'
+             . '<th width="300">' . t('Client')     . '</th>'
+             . '<th>' . t('Contract')   . '</th>'
+             . '<th style="text-align: right;">' . t('Worked') . '</th>'
+             . '</tr>';
   
     if ($exclude_mode == 'incomes') {
       // List all, except those excluded
       foreach ($report_lines as $client_name => $tmp) {
         foreach ($tmp as $key => $val) {
           if (! in_array($val['client_title'], $exclude_clients)) {
-            $output .= '<tr><td>' . $val['client_title'] . '</td><td>' . $val['contract_title'] . '</td><td>' . sprintf('%.2f', $val['hours_total']) . '</td></tr>';
+            $output .= '<tr><td>' . $val['client_title'] . '</td><td>' . $val['contract_title'] . '</td><td style="text-align: right;">' . sprintf('%.2f', $val['hours_total']) . '</td></tr>';
             $totalincomes += $val['hours_total'];
           }
         }
@@ -202,27 +217,25 @@ function kprojectreports_timespent_user($date_start, $date_end) {
         $tmp = $report_lines[$client];
   
         foreach ($tmp as $key => $val) {
-          $output .= '<tr><td>' . $val['client_title'] . '</td><td>' . $val['contract_title'] . '</td><td>' . sprintf('%.2f', $val['hours_total']) . '</td></tr>';
+          $output .= '<tr><td>' . $val['client_title'] . '</td><td>' . $val['contract_title'] . '</td><td style="text-align: right;">' . sprintf('%.2f', $val['hours_total']) . '</td></tr>';
           $totalincomes += $val['hours_total'];
         }
       }
     }
   
-    $output .= '<tr><td>' . "TOTAL INCOMES:" . '</td><td>' . sprintf('%.2f', $totalincomes) . '</td></tr>';
-    $output .= '</table>';
+    $output .= '<tr><td colspan="2"><strong>' . "Total incomes:" . '</strong></td><td style="text-align: right;"><strong>' . sprintf('%.2f', $totalincomes) . '</strong></td></tr>';
   
     //
     // Expenses
     //
     $totalexpenses = 0;
-    $output .= '<table>';
   
     if ($exclude_mode == 'expenses') {
       // List all, except those excluded
       foreach ($report_lines as $client_name => $tmp) {
         foreach ($tmp as $key => $val) {
           if (! in_array($val['client_title'], $exclude_clients)) {
-            $output .= '<tr><td>' . $val['client_title'] . '</td><td>' . $val['contract_title'] . '</td><td>' . sprintf('%.2f', $val['hours_total']) . '</td></tr>';
+            $output .= '<tr><td>' . $val['client_title'] . '</td><td>' . $val['contract_title'] . '</td><td style="text-align: right;">' . sprintf('%.2f', $val['hours_total']) . '</td></tr>';
             $totalexpenses += $val['hours_total'];
           }
         }
@@ -232,16 +245,18 @@ function kprojectreports_timespent_user($date_start, $date_end) {
       foreach ($exclude_clients as $client) {
         $tmp = $report_lines[$client];
   
-        foreach ($tmp as $key => $val) {
-          $output .= '<tr><td>' . $val['client_title'] . '</td><td>' . $val['contract_title'] . '</td><td>' . sprintf('%.2f', $val['hours_total']) . '</td></tr>';
-          $totalexpenses += $val['hours_total'];
+        if (count($tmp)) {
+          foreach ($tmp as $key => $val) {
+            $output .= '<tr><td>' . $val['client_title'] . '</td><td>' . $val['contract_title'] . '</td><td style="text-align: right;">' . sprintf('%.2f', $val['hours_total']) . '</td></tr>';
+            $totalexpenses += $val['hours_total'];
+          }
         }
       }
     }
 
-    $output .= '<tr><td>' . "TOTAL EXPENSES:" . '</td><td>' . sprintf('%.2f', $totalexpenses) . '</td></tr>';
+    $output .= '<tr><td colspan="2"><strong>' . "Total expenses:" . '</strong></td><td style="text-align: right;"><strong>' . sprintf('%.2f', $totalexpenses) . '</strong></td></tr>';
+    $output .= '<tr><td colspan="2"><strong>' . "TOTAL HOURS:" . '</strong></td><td style="text-align: right;"><strong>' . sprintf('%.2f', $totalincomes + $totalexpenses) . '</strong></td></tr>';
     $output .= '</table>';
-    $output .= "<p>TOTAL HOURS: " . sprintf('%.2f', $totalincomes + $totalexpenses) . '</p>';
   }
 
   return $output;

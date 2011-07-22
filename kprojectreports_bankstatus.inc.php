@@ -16,15 +16,11 @@ function kprojectreports_bankstatus($start, $end, $report) {
       $report_first_day     = $report->options['week_firstday'];
       $current_day_of_week  = date('N', time()); // 1 = mon, 7 = sun
 
-      $output .= "(debug: report_first_day = $report_first_day, current_dow = $current_day_of_week) ";
-
       // We substract 1 from current_day_of_week because time() is probably 1 AM on the next day.
       // Ex: if "now = 3 (wed), start = 7 (sunday), then delta = (3 - 7) = -4 => (7 - abs(-4)) = 3.
       //     if "now = 7 (sun), start = 7 (sunday), then delta = (7 - 7) = 0  => (7 - 0) = 7.
       $delta = $current_day_of_week - 1 - $report_first_day;
       $delta = ($delta < 0 ? 7 - abs($delta) : $delta);
-
-      $output .= "(debug: delta = $delta)";
 
       // Ex: if today is Sunday, and start of week is sunday, then report past week
       if ($delta == 0) {
@@ -52,8 +48,12 @@ function kprojectreports_bankstatus($start, $end, $report) {
   $contractname = db_result(db_query("SELECT node.title FROM {node} WHERE nid = %d", $contractid));
 
   // Show work summary (by task)
-  $output .= "<h3>" . "Summary by task" . "</h3>";
+  $output .= "<h1>" . "Summary by task" . "</h1>";
   $output .= "<table>";
+  $output .= '<tr>'
+           . '<th>' . t('Task')     . '</th>'
+           . '<th style="text-align: right;">' . t('Worked')   . '</th>'
+           . '</tr>';
 
   $sql = "SELECT ktask_ktask_node.title as tasktitle, sum(kpunch.duration) / 60 / 60 as totalhours
           FROM {kpunch} kpunch
@@ -69,17 +69,21 @@ function kprojectreports_bankstatus($start, $end, $report) {
   $result = db_query($sql, $date_start, $date_end, $contractid);
 
   while ($contract = db_fetch_object($result)) {
-    $output .= "<tr><td>" . $contract->tasktitle . '</td><td>' . sprintf('%.2f', $contract->totalhours) . " " . "h" ."</td></tr>";
+    $output .= "<tr><td>" . $contract->tasktitle . '</td><td style="text-align: right;">' . sprintf('%.2f', $contract->totalhours) . " " . "h" ."</td></tr>";
     $totalhours += $contract->totalhours;
   }
 
-  $output .= '<tr><td>' . 'TOTAL:' . '</td><td>' . sprintf('%.2f', $totalhours) . ' h' . '</td></tr>';
+  $output .= '<tr><td><strong>' . 'TOTAL:' . '</strong></td><td style="text-align: right;"><strong>' . sprintf('%.2f', $totalhours) . ' h' . '</strong></td></tr>';
   $output .= "</table>";
 
   // Show work summary (by user)
   if ($report->options['bankstatus_showpunches']) {
-    $output .= "<h3>" . "Summary by user" . "</h3>";
+    $output .= "<h1>" . "Summary by user" . "</h1>";
     $output .= "<table>";
+    $output .= '<tr>'
+             . '<th>' . t('User') . '</th>'
+             . '<th style="text-align: right;">' . t('Worked') . '</th>'
+             . '</tr>';
   
     $sql = "SELECT ktask_ktask_node.title as tasktitle, sum(kpunch.duration) / 60 / 60 as totalhours, users.name as username
             FROM {kpunch} kpunch
@@ -96,14 +100,22 @@ function kprojectreports_bankstatus($start, $end, $report) {
     $result = db_query($sql, $date_start, $date_end, $contractid);
   
     while ($contract = db_fetch_object($result)) {
-      $output .= "<tr><td>" . $contract->username . '</td><td>' . sprintf('%.2f', $contract->totalhours) . " " . "h" ."</td></tr>";
+      $output .= "<tr><td>" . $contract->username . '</td>'
+               . '<td style="text-align: right;">' . sprintf('%.2f', $contract->totalhours) . " " . "h" ."</td></tr>";
     }
   
     $output .= "</table>";
   
     // Show all punches
-    $output .= "<h3>" . "All punches" . "</h3>";
+    $output .= "<h1>" . "All punches" . "</h1>";
     $output .= "<table>";
+    $output .= '<tr>'
+             . '<th>' . t('Date')     . '</th>'
+             . '<th>' . t('Contract')   . '</th>'
+             . '<th>' . t('User'). '</th>'
+             . '<th style="text-align: right;">' . t('Worked') . '</th>'
+             . '<th>' . t('Comment')   . '</th>'
+             . '</tr>';
   
     $sql = "SELECT from_unixtime(kpunch.begin) as begin, kpunch.comment, ktask_ktask_node.title as tasktitle, users.name as username, kpunch.duration / 60 / 60 as totalhours
             FROM {kpunch} kpunch
@@ -119,7 +131,11 @@ function kprojectreports_bankstatus($start, $end, $report) {
     $result = db_query($sql, $date_start, $date_end, $contractid);
   
     while ($contract = db_fetch_object($result)) {
-      $output .= "<tr><td>" . $contract->begin . '</td><td>' . $contract->tasktitle . '</td><td>' . $contract->username . '</td><td>' . sprintf('%.2f', $contract->totalhours) . " h" . "</td><td>" . $contract->comment . "</td></tr>";
+      $output .= "<tr><td>" . $contract->begin . '</td>'
+               . '<td>' . $contract->tasktitle . '</td>'
+               . '<td>' . $contract->username . '</td>'
+               . '<td style="text-align: right;">' . sprintf('%.2f', $contract->totalhours) . " h" . '</td>'
+               . '<td>' . $contract->comment . '</td></tr>';
     }
   
     $output .= "</table>";
