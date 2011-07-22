@@ -41,6 +41,10 @@ function kprojectreports_schema($value='') {
         'not null' => FALSE,
         'disp-width' => '11',
       ),
+      'intro' => array(
+        'description' => t('Report introduction text to be included in the e-mails.'),
+        'type' => 'text',
+      ),
       'options' => array(
         'description' => t('Report options, may be defined by other modules.'),
         'type' => 'text',
@@ -81,6 +85,16 @@ function kprojectreports_update_6101() {
 function kprojectreports_update_6102() {
   $ret = array();
   db_add_field(&$ret, 'kprojectreports_schedules', 'options', array('description' => t('Report options, may be defined by other modules.'), 'type' => 'text'));
+
+  return $ret;
+}
+
+/**
+ * Add "intro" field, so that we can explain to clients why they are getting this e-mail
+ */
+function kprojectreports_update_6103() {
+  $ret = array();
+  db_add_field(&$ret, 'kprojectreports_schedules', 'intro', array('description' => t('Report introduction text to be included in the e-mails.'), 'type' => 'text'));
 
   return $ret;
 }

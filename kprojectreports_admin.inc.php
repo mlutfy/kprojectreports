@@ -159,6 +159,7 @@ function kprojectreports_admin_editreport(&$form_state, $report = 'add')  {
     '#required' => TRUE,
   );
 
+  /* not used
   $form['format'] = array(
     '#type' => 'select',
     '#title' => t('Format'),
@@ -168,6 +169,14 @@ function kprojectreports_admin_editreport(&$form_state, $report = 'add')  {
       'html' => 'HTML',
       'csv'  => 'Comma separated values (csv)',
     ),
+  );
+  */
+
+  $form['intro'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Introduction text'),
+    '#description' => t('The introduction text will be displayed above the report. Useful for when sending the report to clients.'),
+    '#default_value' => $data['intro'],
   );
 
   $form['submit'] = array(
@@ -236,11 +245,12 @@ function kprojectreports_admin_editreport_submit($form, &$form_state) {
   $report    = filter_xss($form_state['values']['report']);
   $mail      = filter_xss($form_state['values']['mail']);
   $format    = filter_xss($form_state['values']['format']);
+  $intro     = filter_xss($form_state['values']['intro']);
 
   if ($krid == 'add') {
-    db_query("INSERT INTO {kprojectreports_schedules} (title, frequency, report, mail, format)
-              VALUES ('%s', '%s', '%s', '%s', '%s')",
-              $title, $frequency, $report, $mail, $format);
+    db_query("INSERT INTO {kprojectreports_schedules} (title, frequency, report, mail, format, intro)
+              VALUES ('%s', '%s', '%s', '%s', '%s', '%s')",
+              $title, $frequency, $report, $mail, $format, $intro);
 
     // Store the ID of the newly created report so that the next step ("edit more options, if any")
     // can save its preferences.
@@ -258,9 +268,10 @@ function kprojectreports_admin_editreport_submit($form, &$form_state) {
                   frequency = '%s', 
                   report = '%s',
                   mail = '%s',
-                  format = '%s'
+                  format = '%s',
+                  intro = '%s'
               WHERE krid = %d",
-              $title, $frequency, $report, $mail, $format, $krid);
+              $title, $frequency, $report, $mail, $format, $intro, $krid);
 
     if (! $form_state['rebuild']) {
       drupal_set_message(t("Your report schedule has been updated."));

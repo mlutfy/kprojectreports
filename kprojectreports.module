@@ -74,18 +74,27 @@ function kprojectreports_cron() {
         // TODO: use mimemail? (attach html, csv..)
         // or c.f. http://api.drupal.org/api/function/drupal_mail/6
         $header = array(
-          'Return-Path' => '<' . variable_get('site_mail', 'FIXME@FIXME.org') . '>',
+          'Return-Path' => '<' . $emailfrom . '>',
           'Date' => date('r'),
-          'From' => variable_get('site_mail', 'FIXME@FIXME.org'),
+          'From' => $emailfrom,
           'X-Mailer' => 'koumbit-kprojectreports',
           'Content-Type' => 'text/html; charset=UTF-8; format=flowed',
+          'Mime-Version' => "1.0",
         );
 
         $subject = $report->title;
 
-	if (function_exists('token_replace')) {
-	  $subject = token_replace($report->title, 'global');
-	}
+        if (function_exists('token_replace')) {
+          $subject = token_replace($report->title, 'global');
+        }
+
+        // Add introduction, if any
+        if ($report->intro) {
+          $output = '<p>' . $report->intro . '</p>';
+        }
+
+        // Add a footer to inform about the origin
+        $output .= '<p>' . 'This is an automated report sent from ' . $servername . '. For more information, contact: ' . $emailfrom . '</p>';
   
         $message = array(
           'to' => $mail,
