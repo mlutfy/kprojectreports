@@ -27,7 +27,7 @@ function kprojectreports_admin_listreports()  {
     'frequency' => array('data' => t('Frequency'), 'field' => 'frequency'),
     'report' => array('data' => t('Report'), 'field' => 'report'),
     'mail' => array('data' => t('E-mail'), 'field' => 'mail'),
-    'action' => array('data' => t('Action'), 'field' => 'action'),
+    'action' => array('data' => t('Actions'), 'field' => 'action'),
   );
 
   $items = array();
@@ -35,10 +35,13 @@ function kprojectreports_admin_listreports()  {
   while ($row = db_fetch_array($result)) {
     $img_edit   = '<img src="' . $base_path . drupal_get_path('module', 'kprojectreports') . '/images/edit.png" alt="' . t('edit') . '" />';
     $img_delete = '<img src="' . $base_path . drupal_get_path('module', 'kprojectreports') . '/images/delete.png" alt="' . t('delete') . '" />';
+    $img_preview = '<img src="' . $base_path . drupal_get_path('module', 'kprojectreports') . '/images/preview.png" alt="' . t('preview') . '" />';
 
     $row['action']  = l($img_edit, 'admin/settings/kprojectreports/' . $row['krid'], array('html' => TRUE, 'attributes' => array('title' => t('edit'))));
     $row['action'] .= " ";
     $row['action'] .= l($img_delete, 'admin/settings/kprojectreports/' . $row['krid'] . '/delete', array('html' => TRUE, 'attributes' => array('title' => t('delete'))));
+    $row['action'] .= " ";
+    $row['action'] .= l($img_preview, 'admin/settings/kprojectreports/' . $row['krid'] . '/preview', array('html' => TRUE, 'attributes' => array('title' => t('preview'))));
     $items[] = $row;
   }
 
@@ -303,4 +306,78 @@ function kprojectreports_report_delete($krid) {
   db_query('DELETE FROM {kprojectreports_schedules} WHERE krid = %d', $krid);
 } 
 
+/**
+ * Preview a report on screen
+ */
+function kprojectreports_preview_form($form_state, $report = NULL, $params = NULL) {
+  $daterun = date('Y-m-d', time());
+  $reporttitle = $report->title;
+
+
+  if ($_REQUEST['daterun']) {
+    $daterun = check_plain($_REQUEST['daterun']);
+  }
+
+  // cheap token replacement in case there is [site-date] in the title
+  $reporttitle = preg_replace('/\[site-date\]/', $daterun, $reporttitle);
+
+  $form['krid'] = array(
+    '#type' => 'value',
+    '#value' => $report->krid,
+  );
+
+  $form['test'] = array(
+    '#markup' => 'coucou: ' . print_r($report, 1),
+  );
+
+  $form['daterun'] = array(
+    '#type' => 'date_popup',
+    '#title' => t('Report run date'),
+    '#date_format' => 'Y-m-d',
+    '#default_value' => $daterun,
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit'),
+  );
+
+  $form['reportdata'] = array(
+    '#type' => 'fieldset',
+    '#title' => $reporttitle,
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  );
+
+  // Run the report, mostly copied from kprojectreports_cron, refactor?
+  include_once(drupal_get_path('module', 'kprojectreports') .'/kprojectreports_frequency.inc.php');
+  $f = 'kprojectreports_frequency_timetorun_' . $report->frequency;
+
+  if (function_exists($f)) {
+    drupal_set_message('foo = ' . print_r($f($report), 1));
+    list($timetorun, $date_start, $date_end) = $f($report);
+  }
+
+  drupal_set_message('timetorun : ' . $timetorun . ', start = ' . $date_start . ', end = ' . $date_end);
+
+  $reportfunc = $report->report; // ex: kprojectreports_timespent
+  include_once(drupal_get_path('module', 'kprojectreports') .'/' . $report->report . '.inc.php');
+  $report->options = unserialize($report->options);
+  $output = $reportfunc($date_start, $date_end, $report);
+
+  $form['reportdata']['output'] = array(
+    '#type' => 'markup',
+    '#value' => $output,
+  );
+
+  return $form;
+}
+
+
+function kprojectreports_preview_form_submit($form, &$form_state) {
+  $daterun = check_plain($form_state['values']['daterun']);
+  $daterun = substr($daterun, 0, 10); // grab only the date part, not time
+
+  drupal_goto('admin/settings/kprojectreports/2/preview', 'daterun=' . $daterun);
+}
 

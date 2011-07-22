@@ -99,9 +99,11 @@ function kprojectreports_frequency_timetorun_day($report) {
      || (date('H', $now) < 5) && ($report->lastrun < $now - 60 * 60 * 23))
   {
     $timetorun = TRUE;
-    $date_start = mktime(0, 0, 0, date('m', $now), date('d', $now) - 1, date('Y', $now)); // 0h, yesterday
-    $date_end   = mktime(23, 59, 59, date('m', $now), date('d', $now) - 1, date('Y', $now)); // 23h59, yesterday
   }
+
+  // provide dates anyway, for the preview
+  $date_start = mktime(0, 0, 0, date('m', $now), date('d', $now) - 1, date('Y', $now)); // 0h, yesterday
+  $date_end   = mktime(23, 59, 59, date('m', $now), date('d', $now) - 1, date('Y', $now)); // 23h59, yesterday
 
   return array($timetorun, $date_start, $date_end);
 }
@@ -115,9 +117,11 @@ function kprojectreports_frequency_timetorun_week($report) {
      || (date('N', $now) == 1 && (date('H', $now) < 5) && ($report->lastrun < $now - 60 * 60 * 24)))
   {
     $timetorun = TRUE;
-    $date_end   = mktime(23, 59, 59, date('m', $now), date('d', $now) - 1, date('Y', $now)); // 23h59, yesterday
-    $date_start = $date_end - (60 * 60 * 24 * 7);
   }
+
+  // provide dates anyway, for the preview
+  $date_end   = mktime(23, 59, 59, date('m', $now), date('d', $now) - 1, date('Y', $now)); // 23h59, yesterday
+  $date_start = $date_end - (60 * 60 * 24 * 7);
 
   return array($timetorun, $date_start, $date_end);
 }
@@ -133,9 +137,11 @@ function kprojectreports_frequency_timetorun_week2($report) {
      || (date('N', $now) == $report->options['week_firstday'] && (date('H', $now) < 5) && ($report->lastrun < $now - 60 * 60 * 24)))
   {
     $timetorun = TRUE;
-    $date_end   = mktime(23, 59, 59, date('m', $now), date('d', $now) - 1, date('Y', $now)); // 23h59, yesterday
-    $date_start = $date_end - (60 * 60 * 24 * 14);
   }
+
+  // provide dates anyway, for the preview
+  $date_end   = mktime(23, 59, 59, date('m', $now), date('d', $now) - 1, date('Y', $now)); // 23h59, yesterday
+  $date_start = $date_end - (60 * 60 * 24 * 14);
 
   return array($timetorun, $date_start, $date_end);
 }
@@ -149,9 +155,11 @@ function kprojectreports_frequency_timetorun_month($report) {
      || (date('d', $now) == 1 && $report->lastrun < $now - 60 * 60 * 24))
   {
     $timetorun = TRUE;
-    $date_start = mktime(0, 0, 0, date('m', $now) - 1, 1, date('Y', $now)); // first day of last current month
-    $date_end   = mktime(23, 59, 59, date('m', $now) - 1, 31, date('Y', $now)); // last day of current month
   }
+
+  // provide dates anyway, for the preview
+  $date_start = mktime(0, 0, 0, date('m', $now) - 1, 1, date('Y', $now)); // first day of last current month
+  $date_end   = mktime(23, 59, 59, date('m', $now) - 1, 31, date('Y', $now)); // last day of current month
 
   return array($timetorun, $date_start, $date_end);
 }
@@ -167,9 +175,11 @@ function kprojectreports_frequency_timetorun_quarter($report) {
      || (date('j', $now) == 1 && $is_new_quarter && $report->lastrun < $now - 60 * 60 * 24))
   {
     $timetorun = TRUE;
-    $date_start = mktime(0, 0, 0, date('m', $now) - 1, 1, date('Y', $now)); // first day of last current month
-    $date_end   = mktime(23, 59, 59, date('m', $now) - 1, 31, date('Y', $now)); // last day of current month
   }
+
+  // provide dates anyway, for the preview
+  $date_start = mktime(0, 0, 0, date('m', $now) - 1, 1, date('Y', $now)); // first day of last current month
+  $date_end   = mktime(23, 59, 59, date('m', $now) - 1, 31, date('Y', $now)); // last day of current month
 
   return array($timetorun, $date_start, $date_end);
 }
