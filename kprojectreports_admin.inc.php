@@ -354,11 +354,8 @@ function kprojectreports_preview_form($form_state, $report = NULL, $params = NUL
   $f = 'kprojectreports_frequency_timetorun_' . $report->frequency;
 
   if (function_exists($f)) {
-    drupal_set_message('foo = ' . print_r($f($report), 1));
     list($timetorun, $date_start, $date_end) = $f($report);
   }
-
-  drupal_set_message('timetorun : ' . $timetorun . ', start = ' . $date_start . ', end = ' . $date_end);
 
   $reportfunc = $report->report; // ex: kprojectreports_timespent
   include_once(drupal_get_path('module', 'kprojectreports') .'/' . $report->report . '.inc.php');
