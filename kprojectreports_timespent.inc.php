@@ -188,7 +188,7 @@ function kprojectreports_timespent_get_summary_global($date_start, $date_end) {
       $client = db_result(db_query('SELECT title FROM {node} WHERE nid = %d', $kcontract->parent));
 
       // Fetch total number of hours worked on the project
-      $sql3 = "SELECT ktask_ktask_node.title as taskname, sum(kpunch.duration) / 60 / 60 as totalhours
+      $sql3 = "SELECT sum(kpunch.duration) / 60 / 60 as totalhours
                FROM {kpunch} kpunch
                LEFT JOIN {node} node_kpunch ON kpunch.nid = node_kpunch.nid
                LEFT JOIN {ktask} node_kpunch__ktask ON node_kpunch.vid = node_kpunch__ktask.vid
