@@ -326,10 +326,6 @@ function kprojectreports_preview_form($form_state, $report = NULL, $params = NUL
     '#value' => $report->krid,
   );
 
-  $form['test'] = array(
-    '#markup' => 'coucou: ' . print_r($report, 1),
-  );
-
   $form['daterun'] = array(
     '#type' => 'date_popup',
     '#title' => t('Report run date'),
@@ -361,6 +357,11 @@ function kprojectreports_preview_form($form_state, $report = NULL, $params = NUL
   include_once(drupal_get_path('module', 'kprojectreports') .'/' . $report->report . '.inc.php');
   $report->options = unserialize($report->options);
   $output = $reportfunc($date_start, $date_end, $report);
+
+  $form['reportdata']['intro'] = array(
+    '#type' => 'markup',
+    '#value' => '<p>' . $report->intro . '</p>',
+  );
 
   $form['reportdata']['output'] = array(
     '#type' => 'markup',
