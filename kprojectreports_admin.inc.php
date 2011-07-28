@@ -331,6 +331,7 @@ function kprojectreports_preview_form($form_state, $report = NULL, $params = NUL
     '#title' => t('Report run date'),
     '#date_format' => 'Y-m-d',
     '#default_value' => $daterun,
+    '#description' => t('For example: if the date is 2012-02-20 and it is a monthly report, then report will be from 2012-01-01 to 2012-01-31. If you want to generate a partial monthly report for 2012-02, then enter 2012-03-01 as the run date.'),
   );
 
   $form['submit'] = array(
@@ -350,7 +351,8 @@ function kprojectreports_preview_form($form_state, $report = NULL, $params = NUL
   $f = 'kprojectreports_frequency_timetorun_' . $report->frequency;
 
   if (function_exists($f)) {
-    list($timetorun, $date_start, $date_end) = $f($report);
+    $daterun = strtotime(check_plain($_REQUEST['daterun']));
+    list($timetorun, $date_start, $date_end) = $f($report, $daterun);
   }
 
   $reportfunc = $report->report; // ex: kprojectreports_timespent
@@ -373,9 +375,10 @@ function kprojectreports_preview_form($form_state, $report = NULL, $params = NUL
 
 
 function kprojectreports_preview_form_submit($form, &$form_state) {
+  $reportid = $form_state['values']['krid'];
   $daterun = check_plain($form_state['values']['daterun']);
   $daterun = substr($daterun, 0, 10); // grab only the date part, not time
 
-  drupal_goto('admin/settings/kprojectreports/2/preview', 'daterun=' . $daterun);
+  drupal_goto('admin/settings/kprojectreports/' . $reportid . '/preview', 'daterun=' . $daterun);
 }
 
