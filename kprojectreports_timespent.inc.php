@@ -16,6 +16,8 @@ function kprojectreports_timespent($start, $end, $report) {
 function kprojectreports_timespent_global($date_start, $date_end) {
   $output = '';
 
+  drupal_set_message('from ' . date('c', $date_start) . ' to ' . date('c', $date_end));
+
   $exclude_mode = 'incomes';
   $exclude_clients = array('Koumbit'); // HARDCODE XXX FIXME
 
