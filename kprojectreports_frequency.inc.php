@@ -90,9 +90,12 @@ function kprojectreports_frequency_editreport_quarter(&$form_state, &$form, $dat
 // ******* Functions to determine whether it is time to run
 //
 
-function kprojectreports_frequency_timetorun_day($report) {
+function kprojectreports_frequency_timetorun_day($report, $now = NULL) {
   $timetorun = FALSE;
-  $now = time();
+
+  if (! $now) {
+    $now = time();
+  }
 
   // Run around 5h on the next day, check if day is smaller than today
   if (! $report->lastrun
@@ -108,9 +111,12 @@ function kprojectreports_frequency_timetorun_day($report) {
   return array($timetorun, $date_start, $date_end);
 }
 
-function kprojectreports_frequency_timetorun_week($report) {
+function kprojectreports_frequency_timetorun_week($report, $now = NULL) {
   $timetorun = FALSE;
-  $now = time();
+
+  if (! $now) {
+    $now = time();
+  }
 
   // Run on "first day" (configurable by report) around 4h, if we haven't already ran lately
   if (! $report->lastrun
@@ -126,9 +132,12 @@ function kprojectreports_frequency_timetorun_week($report) {
   return array($timetorun, $date_start, $date_end);
 }
 
-function kprojectreports_frequency_timetorun_week2($report) {
+function kprojectreports_frequency_timetorun_week2($report, $now = NULL) {
   $timetorun = FALSE;
-  $now = time();
+
+  if (! $now) {
+    $now = time();
+  }
 
   // Run on Monday around 4h, if we haven't already ran lately
   $is_week2 = (date('W') % 2 == $report->options['week2_firstweek'] % 2);
@@ -146,9 +155,12 @@ function kprojectreports_frequency_timetorun_week2($report) {
   return array($timetorun, $date_start, $date_end);
 }
 
-function kprojectreports_frequency_timetorun_month($report) {
+function kprojectreports_frequency_timetorun_month($report, $now = NULL) {
   $timetorun = FALSE;
-  $now = time();
+
+  if (! $now) {
+    $now = time();
+  }
 
   // Run on the first day of the month, in the morning, if we haven't already ran today
   if (! $report->lastrun
@@ -158,15 +170,32 @@ function kprojectreports_frequency_timetorun_month($report) {
   }
 
   // provide dates anyway, for the preview
-  $date_start = mktime(0, 0, 0, date('m', $now) - 1, 1, date('Y', $now)); // first day of last current month
-  $date_end   = mktime(23, 59, 59, date('m', $now) - 1, 31, date('Y', $now)); // last day of current month
+  $date_end_year  = date('Y', $now);
+  $date_end_month = date('m', $now) - 1;
+  $date_end_day   = 31;
+
+  // if we are in January, the end of the last month will be 2010-12-31
+  if ($date_end_month <= 0) {
+    $date_end_month = 12;
+    $date_end_year--;
+  }
+
+  while (! checkdate($date_end_month, $date_end_day, $date_end_year)) {
+    $date_end_day--;
+  }
+
+  $date_start = mktime(0, 0, 0, date('m', $now) - 1, 1, date('Y', $now));
+  $date_end   = mktime(23, 59, 59, $date_end_month, $date_end_day, $date_end_year);
 
   return array($timetorun, $date_start, $date_end);
 }
 
-function kprojectreports_frequency_timetorun_quarter($report) {
+function kprojectreports_frequency_timetorun_quarter($report, $now = NULL) {
   $timetorun = FALSE;
-  $now = time();
+
+  if (! $now) {
+    $now = time();
+  }
 
   // Run on the first day of the month, in the morning, if we haven't already ran today
   $is_new_quarter = (date('n') % 3 == $report->options['quarter_yearstart'] % 3);
@@ -178,15 +207,28 @@ function kprojectreports_frequency_timetorun_quarter($report) {
   }
 
   // provide dates anyway, for the preview
-  $date_start = mktime(0, 0, 0, date('m', $now) - 1, 1, date('Y', $now)); // first day of last current month
-  $date_end   = mktime(23, 59, 59, date('m', $now) - 1, 31, date('Y', $now)); // last day of current month
+  $date_end_year  = date('Y', $now);
+  $date_end_month = date('m', $now) - 1;
+  $date_end_day   = 31;
+
+  // if we are in January, the end of the last month will be 2010-12-31
+  if ($date_end_month <= 0) {
+    $date_end_month = 12;
+    $date_end_year--;
+  }
+
+  $date_start = mktime(0, 0, 0, date('m', $now) - 3, 1, date('Y', $now));
+  $date_end   = mktime(23, 59, 59, $date_end_month, $date_end_day, $date_end_year);
 
   return array($timetorun, $date_start, $date_end);
 }
 
-function kprojectreports_frequency_timetorun_year($report) {
+function kprojectreports_frequency_timetorun_year($report, $now = NULL) {
   $timetorun = FALSE;
-  $now = time();
+
+  if (! $now) {
+    $now = time();
+  }
 
   // TODO: make "first day of year" configurable. For now, is September 1st
   if (! $report->lastrun
