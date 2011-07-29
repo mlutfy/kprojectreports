@@ -1,7 +1,17 @@
 <?php
 
+function kprojectreports_bankstatus_datehelp() {
+  return t("If the date is 2012-02-20, the preview will generate a report from the beginning of the period (ex: month) up to that date.");
+}
+
 function kprojectreports_bankstatus($start, $end, $report) {
   $output = '';
+
+  if (isset($_REQUEST['daterun'])) {
+    $now = strtotime(check_plain($_REQUEST['daterun']));
+  } else {
+    $now = time();
+  }
 
   // TODO: 
   // - calculate if hours estimated
@@ -14,9 +24,9 @@ function kprojectreports_bankstatus($start, $end, $report) {
     case 'weekly':
       // first day of the current week
       $report_first_day     = $report->options['week_firstday'];
-      $current_day_of_week  = date('N', time()); // 1 = mon, 7 = sun
+      $current_day_of_week  = date('N', $now); // 1 = mon, 7 = sun
 
-      // We substract 1 from current_day_of_week because time() is probably 1 AM on the next day.
+      // We substract 1 from current_day_of_week because $now is probably 1 AM on the next day.
       // Ex: if "now = 3 (wed), start = 7 (sunday), then delta = (3 - 7) = -4 => (7 - abs(-4)) = 3.
       //     if "now = 7 (sun), start = 7 (sunday), then delta = (7 - 7) = 0  => (7 - 0) = 7.
       $delta = $current_day_of_week - 1 - $report_first_day;
@@ -27,12 +37,12 @@ function kprojectreports_bankstatus($start, $end, $report) {
         $delta = 7;
       }
 
-      $date_start = mktime(0, 0, 0, date('n', time()), date('j', time()) - $delta, date('Y', time()));
+      $date_start = mktime(0, 0, 0, date('n', $now), date('j', $now) - $delta, date('Y', $now));
       break;
 
     case 'monthly':
       // first day of current month (does not cover edge cases)
-      $date_start = mktime(0, 0, 0, date('n', time()), 1, date('Y', time()));
+      $date_start = mktime(0, 0, 0, date('n', $now), 1, date('Y', $now));
       break;
 
     default:
@@ -40,7 +50,7 @@ function kprojectreports_bankstatus($start, $end, $report) {
 
   }
 
-  $date_end = time();
+  $date_end = $now;
 
   $totalhours = 0;
 

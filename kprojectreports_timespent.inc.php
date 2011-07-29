@@ -9,6 +9,10 @@ function kprojectreports_timespent($start, $end, $report) {
   return $output;
 }
 
+function kprojectreports_timespent_datehelp() {
+  return t("If the date is 2012-02-20 and it is a monthly report, then report will be from 2012-01-01 to 2012-01-31. If you want to generate a partial monthly report for 2012-02, then enter 2012-03-01 as the run date.");
+}
+
 //
 // ------------------------------- GLOBAL REPORT -------------------------
 //

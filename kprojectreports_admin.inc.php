@@ -313,6 +313,7 @@ function kprojectreports_preview_form($form_state, $report = NULL, $params = NUL
   $daterun = date('Y-m-d', time());
   $reporttitle = $report->title;
 
+  include_once(drupal_get_path('module', 'kprojectreports') .'/' . $report->report . '.inc.php');
 
   if ($_REQUEST['daterun']) {
     $daterun = check_plain($_REQUEST['daterun']);
@@ -326,12 +327,19 @@ function kprojectreports_preview_form($form_state, $report = NULL, $params = NUL
     '#value' => $report->krid,
   );
 
+  $helpfunc = $report->report . '_datehelp';
+  $helptext = "The help text for this field is not implemented. You have gone where no user has gone before.";
+
+  if (function_exists($helpfunc)) {
+    $helptext = $helpfunc();
+  }
+
   $form['daterun'] = array(
     '#type' => 'date_popup',
     '#title' => t('Report run date'),
     '#date_format' => 'Y-m-d',
     '#default_value' => $daterun,
-    '#description' => t('For example: if the date is 2012-02-20 and it is a monthly report, then report will be from 2012-01-01 to 2012-01-31. If you want to generate a partial monthly report for 2012-02, then enter 2012-03-01 as the run date.'),
+    '#description' => $helptext,
   );
 
   $form['submit'] = array(
@@ -356,7 +364,6 @@ function kprojectreports_preview_form($form_state, $report = NULL, $params = NUL
   }
 
   $reportfunc = $report->report; // ex: kprojectreports_timespent
-  include_once(drupal_get_path('module', 'kprojectreports') .'/' . $report->report . '.inc.php');
   $report->options = unserialize($report->options);
   $output = $reportfunc($date_start, $date_end, $report);
 
