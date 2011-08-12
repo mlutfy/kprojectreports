@@ -18,8 +18,6 @@ function kprojectreports_timespent_datehelp() {
 //
 
 function kprojectreports_timespent_global($date_start, $date_end) {
-  $output = '';
-
   drupal_set_message('from ' . date('c', $date_start) . ' to ' . date('c', $date_end));
 
   $exclude_mode = 'incomes';
@@ -32,8 +30,8 @@ function kprojectreports_timespent_global($date_start, $date_end) {
   //
   $totalincomes = 0;
 
-  $output .= '<table>';
-  $output .= '<tr>'
+  $outputincomes  = '<table>';
+  $outputincomes .= '<tr>'
            . '<th>' . t('Client')     . '</th>'
            . '<th>' . t('Contract')   . '</th>'
            . '<th style="text-align: right;">' . t('Period work'). '</th>'
@@ -65,7 +63,7 @@ function kprojectreports_timespent_global($date_start, $date_end) {
             $color = '#AAAA00;';
           }
 
-          $output .= '<tr>'
+          $outputincomes .= '<tr>'
                    . '<td>' . $val['client_title'] . '</td>'
                    . '<td>' . $val['contract_title'] . '</td>'
                    . '<td style="text-align: right;">' . sprintf('%.2f', $val['hours_period']) . '</td>'
@@ -85,7 +83,7 @@ function kprojectreports_timespent_global($date_start, $date_end) {
       $tmp = $report_lines[$client];
 
       foreach ($tmp as $key => $val) {
-        $output .= '<tr>'
+        $outputincomes .= '<tr>'
                  . '<td>' . $val['client_title'] . '</td>'
                  . '<td>' . $val['contract_title'] . '</td>'
                  . '<td style="text-align: right;">' . sprintf('%.2f', $val['hours_total']) . '</td>'
@@ -95,18 +93,13 @@ function kprojectreports_timespent_global($date_start, $date_end) {
     }
   }
 
-  $output .= '<tr>'
-           . '<td colspan="2" style="font-weight: bold;">' . "Total incomes:" . '</td>'
-           . '<td style="font-weight: bold; text-align: right;">' . sprintf('%.2f', $totalincomes) . '</td>'
-           . '</tr>';
-  $output .= '</table>';
 
   //
   // Expenses
   //
   $totalexpenses = 0;
-  $output .= '<table>';
-  $output .= '<tr>'
+  $outputexpenses  = '<table>';
+  $outputexpenses .= '<tr>'
            . '<th width="300">' . t('Client')     . '</th>'
            . '<th>' . t('Contract')   . '</th>'
            . '<th style="text-align: right;">' . t('Worked') . '</th>'
@@ -118,7 +111,7 @@ function kprojectreports_timespent_global($date_start, $date_end) {
     foreach ($report_lines as $client_name => $tmp) {
       foreach ($tmp as $key => $val) {
         if (! in_array($val['client_title'], $exclude_clients)) {
-          $output .= '<tr>'
+          $outputexpenses .= '<tr>'
                    . '<td>' . $val['client_title'] . '</td>'
                    . '<td>' . $val['contract_title'] . '</td>'
                    . '<td style="text-align: right;">' . sprintf('%.2f', $val['hours_period']) . '</td>'
@@ -133,7 +126,7 @@ function kprojectreports_timespent_global($date_start, $date_end) {
       $tmp = $report_lines[$client];
 
       foreach ($tmp as $key => $val) {
-        $output .= '<tr style="background-color: #DDD;">'
+        $outputexpenses .= '<tr style="background-color: #DDD;">'
                  . '<td>' . $val['client_title'] . '</td>'
                  . '<td>' . $val['contract_title'] . '</td>'
                  . '<td style="text-align: right;">' . sprintf('%.2f', $val['hours_period']) . '</td>'
@@ -143,7 +136,7 @@ function kprojectreports_timespent_global($date_start, $date_end) {
 
         // task details
         foreach ($val['hours_bytask'] as $task => $hours) {
-          $output .= '<tr style="font-size: 80%;">'
+          $outputexpenses .= '<tr style="font-size: 80%;">'
                    . '<td>&nbsp;</td>'
                    . '<td style="padding-left: 3em;">' . $task . '</td>'
                    . '<td style="text-align: right;">' . sprintf('%.2f', $hours['hours_period']) . '</td>'
@@ -154,13 +147,43 @@ function kprojectreports_timespent_global($date_start, $date_end) {
     }
   }
 
+  // Include and summarise the incomes:
+  $pctincomes = $totalincomes / ($totalincomes + $totalexpenses) * 100;
+
+  $output = $outputincomes;
+  $output .= '<tr>'
+           . '<td colspan="2" style="font-weight: bold;">' . "Total incomes:" . '</td>'
+           . '<td style="font-weight: bold; text-align: right;">'
+           .  '<span title="' . t('Total income hours worked during this period.') . '">' . sprintf('%.2f', $totalincomes) . '</span>'
+           . '</td>'
+           . '<td colspan="4" style="font-weight: bold; text-align: right;">'
+           .  '<span title="' . t('Percentage of incomes part of the total hours worked.') . '">' . sprintf('%.2f', $pctincomes) . '%</span>'
+           . '</td>'
+           . '</tr>';
+  $output .= '</table>';
+
+  $output .= $outputexpenses;
+
+  // Include and summarise the expenses:
+  $pctexpenses = $totalexpenses / ($totalincomes + $totalexpenses) * 100;
+
   $output .= '<tr>'
            . '<td colspan="2" style="font-weight: bold;">' . "Total expenses:" . '</td>'
-           . '<td style="text-align: right; font-weight: bold;">' . sprintf('%.2f', $totalexpenses) . '</td>'
+           . '<td style="text-align: right; font-weight: bold;">'
+           .  '<span title="' . t('Total expense hours worked during this period.') . '">' . sprintf('%.2f', $totalexpenses) . '</span>'
+           . '</td>'
+           . '<td style="text-align: right; font-weight: bold;">'
+           .  '<span title="' . t('Percentage of expenses part of the total hours worked.') . '">' . sprintf('%.2f', $pctexpenses) . '%</span>'
+           . '</td>'
            . '</tr>';
+
+  // Grand total:
   $output .= '<tr>'
           . '<td colspan="2"><strong>' . "TOTAL HOURS:" . '</td>'
-          . '<td style="text-align: right; font-weight: bold;">' . sprintf('%.2f', $totalincomes + $totalexpenses) . "</td>";
+          . '<td style="text-align: right; font-weight: bold;">'
+          .  '<span title="' . t('Total hours worked during this period (incomes + expenses).') . '">' . sprintf('%.2f', $totalincomes + $totalexpenses) . '</span>'
+          . '</td>'
+          . '</tr>';
   $output .= '</table>';
 
   return $output;
@@ -264,17 +287,14 @@ function kprojectreports_timespent_user($date_start, $date_end) {
 
   while ($user = db_fetch_object($result)) {
     $user = user_load($user->uid);
-
-    $output .= "<h1>" . $user->name . "</h1>";
-
     $report_lines = kprojectreports_timespent_get_summary_by_user($user->uid, $date_start, $date_end);
 
     //
     // Incomes
     //
     $totalincomes = 0;
-    $output .= '<table>';
-    $output .= '<tr>'
+    $outputincomes = '<table>';
+    $outputincomes .= '<tr>'
              . '<th width="300">' . t('Client')     . '</th>'
              . '<th>' . t('Contract')   . '</th>'
              . '<th style="text-align: right;">' . t('Worked') . '</th>'
@@ -286,7 +306,7 @@ function kprojectreports_timespent_user($date_start, $date_end) {
       foreach ($report_lines as $client_name => $tmp) {
         foreach ($tmp as $key => $val) {
           if (! in_array($val['client_title'], $exclude_clients)) {
-            $output .= '<tr>'
+            $outputincomes .= '<tr>'
                      . '<td>' . $val['client_title'] . '</td>'
                      . '<td>' . $val['contract_title'] . '</td>'
                      . '<td style="text-align: right;">' . sprintf('%.2f', $val['hours_period']) . '</td>'
@@ -302,25 +322,25 @@ function kprojectreports_timespent_user($date_start, $date_end) {
         $tmp = $report_lines[$client];
   
         foreach ($tmp as $key => $val) {
-          $output .= '<tr><td>' . $val['client_title'] . '</td><td>' . $val['contract_title'] . '</td><td style="text-align: right;">' . sprintf('%.2f', $val['hours_period']) . '</td></tr>';
+          $outputincomes .= '<tr><td>' . $val['client_title'] . '</td><td>' . $val['contract_title'] . '</td><td style="text-align: right;">' . sprintf('%.2f', $val['hours_period']) . '</td></tr>';
           $totalincomes += $val['hours_period'];
         }
       }
     }
   
-    $output .= '<tr><td colspan="2"><strong>' . "Total incomes:" . '</strong></td><td style="text-align: right;"><strong>' . sprintf('%.2f', $totalincomes) . '</strong></td></tr>';
   
     //
     // Expenses
     //
     $totalexpenses = 0;
+    $outputexpenses = '';
   
     if ($exclude_mode == 'expenses') {
       // List all, except those excluded
       foreach ($report_lines as $client_name => $tmp) {
         foreach ($tmp as $key => $val) {
           if (! in_array($val['client_title'], $exclude_clients)) {
-            $output .= '<tr>'
+            $outputexpenses .= '<tr>'
                      . '<td>' . $val['client_title'] . '</td>'
                      . '<td>' . $val['contract_title'] . '</td>'
                      . '<td style="text-align: right;">' . sprintf('%.2f', $val['hours_period']) . '</td>'
@@ -337,7 +357,7 @@ function kprojectreports_timespent_user($date_start, $date_end) {
   
         if (count($tmp)) {
           foreach ($tmp as $key => $val) {
-            $output .= '<tr style="background-color: #DDD;">'
+            $outputexpenses .= '<tr style="background-color: #DDD;">'
                      . '<td>' . $val['client_title'] . '</td>'
                      . '<td>' . $val['contract_title'] . '</td>'
                      . '<td style="text-align: right;">' . sprintf('%.2f', $val['hours_period']) . '</td>'
@@ -347,7 +367,7 @@ function kprojectreports_timespent_user($date_start, $date_end) {
 
             // task details
             foreach ($val['hours_bytask'] as $task => $hours) {
-              $output .= '<tr style="font-size: 80%;">'
+              $outputexpenses .= '<tr style="font-size: 80%;">'
                        . '<td>&nbsp;</td>'
                        . '<td style="padding-left: 3em;">' . $task . '</td>'
                        . '<td style="text-align: right;">' . sprintf('%.2f', $hours['hours_period']) . '</td>'
@@ -359,8 +379,35 @@ function kprojectreports_timespent_user($date_start, $date_end) {
       }
     }
 
-    $output .= '<tr><td colspan="2"><strong>' . "Total expenses:" . '</strong></td><td style="text-align: right;"><strong>' . sprintf('%.2f', $totalexpenses) . '</strong></td></tr>';
-    $output .= '<tr><td colspan="2"><strong>' . "TOTAL HOURS:" . '</strong></td><td style="text-align: right;"><strong>' . sprintf('%.2f', $totalincomes + $totalexpenses) . '</strong></td></tr>';
+    // Summarise incomes:
+    if ($totalincomes + $totalexpenses > 0) {
+      $pctincomes  = $totalincomes  / ($totalincomes + $totalexpenses) * 100;
+      $pctexpenses = $totalexpenses / ($totalincomes + $totalexpenses) * 100;
+    } else {
+      $pctincomes  = $pctexpenses = 0;
+    }
+
+    $output .= "<h1>" . $user->name . "</h1>";
+    $output .= $outputincomes;
+    $output .= '<tr>'
+             . '<td colspan="2"><strong>' . "Total incomes:" . '</strong></td>'
+             . '<td style="text-align: right;"><strong>' . sprintf('%.2f', $totalincomes) . '</strong></td>'
+             . '<td style="text-align: right;"><strong>' . sprintf('%.2f', $pctincomes) . '%</strong></td>'
+             . '</tr>';
+
+    // Summarise expenses:
+    $output .= $outputexpenses;
+    $output .= '<tr>'
+             . '<td colspan="2"><strong>' . "Total expenses:" . '</strong></td>'
+             . '<td style="text-align: right;"><strong>' . sprintf('%.2f', $totalexpenses) . '</strong></td>'
+             . '<td style="text-align: right;"><strong>' . sprintf('%.2f', $pctexpenses) . '</strong></td>'
+             . '</tr>';
+
+    // Grand total:
+    $output .= '<tr>'
+             . '<td colspan="2"><strong>' . "TOTAL HOURS:" . '</strong></td>'
+             . '<td style="text-align: right;"><strong>' . sprintf('%.2f', $totalincomes + $totalexpenses) . '</strong></td>'
+             . '</tr>';
     $output .= '</table>';
   }
 
