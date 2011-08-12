@@ -10,39 +10,49 @@ function kprojectreports_billable($start, $end, $report) {
   $output .= '<tr>'
            . '<th>' . t('Client') . '</th>'
            . '<th>' . t('Contract') . '</th>'
-           . '<th>' . t('Billable'). '</th>'
-           . '<th>' . t('Total work') . '</th>'
-           . '<th>' . t('Estimate') . '</th>'
-           . '<th>' . t('Percent (period/total)') . '</th>'
+           . '<th>' . t('Lead') . '</th>'
+           . '<th><span title="' . t('Number of hours that have not yet been billed.') . '">' . t('Billable'). '</span></th>'
+           . '<th><span title="' . t('Total number of hours worked on the contract.') . '">' . t('Total work') . '</span></th>'
+           . '<th><span title="' . t('Initial contract estimate (hours).') . '">' . t('Estimate') . '</span></th>'
+           . '<th><span title="' . t('Percentage of hours that should be billed (billable / total * 100)') . '">' . t('% Billable') . '</span></th>'
+           . '<th><span title="' . t('Percentage of hours worked on the project, compared to the initial contract estimate.') . '">' . t('% Worked') . '</span></th>'
            . '</tr>';
 
   foreach ($report_lines as $client_name => $tmp) {
     foreach ($tmp as $key => $val) {
       if (! in_array($val['client_title'], $exclude_clients)) {
         if ($val['estimate'] > 0) {
-          $pct_period = $val['hours_period'] / $val['estimate'] * 100;
+          $pct_billable = $val['hours_period'] / $val['estimate'] * 100;
           $pct_total  = $val['hours_total'] / $val['estimate'] * 100;
         } else {
-          $pct_period = 0;
+          $pct_billable = 0;
           $pct_total = 0;
         }
 
         $output .= '<tr>'
                  . '<td>' . $val['client_title'] . '</td>'
                  . '<td>' . $val['contract_title'] . '</td>'
-                 . '<td>' . sprintf('%.2f', $val['hours_period']) . '</td>'
-                 . '<td>' . sprintf('%.2f', $val['hours_total']) . '</td>'
-                 . '<td ' . ($val['estimate'] ? '' : 'style="color: red;"') . '>' . sprintf('%.2f', $val['estimate']) . '</td>'
-                 . '<td ' . ($pct_total > 100 ? 'style="color: red;"' : ($pct_total > 80 ? 'style="color: #AAAA00;"' : '')) . '>'
-                 . sprintf('%.2f', $pct_period) . '%'
-                 . ' / '
-                 . sprintf('%.2f', $pct_total) . '%' 
+                 . '<td>' . $val['contract_lead'] . '</td>'
+                 . '<td style="text-align: right;">' . sprintf('%.2f', $val['hours_period']) . '</td>'
+                 . '<td style="text-align: right;">' . sprintf('%.2f', $val['hours_total']) . '</td>'
+                 . '<td style="text-align: right;" ' . ($val['estimate'] ? '' : 'style="color: red;"') . '>' . sprintf('%.2f', $val['estimate']) . '</td>'
+                 . '<td style="text-align: right;" ' . ($pct_total > 100 ? 'style="color: red;"' : ($pct_total > 80 ? 'style="color: #AAAA00;"' : '')) . '>'
+                 .  sprintf('%.2f', $pct_billable) . '%'
+                 . '</td>'
+                 . '<td style="text-align: right;" ' . ($pct_total > 100 ? 'style="color: red;"' : ($pct_total > 80 ? 'style="color: #AAAA00;"' : '')) . '>'
+                 .  sprintf('%.2f', $pct_total) . '%' 
                  . '</td>'
                  . '</tr>';
-        $totalincomes += $val['hours_period'];
+
+        $totalbillable += $val['hours_period'];
       }
     }
   }
+
+  $output .= '<tr>'
+           . '<td colspan="3"><strong>' . t('Total billable') . '</strong></td>'
+           . '<td style="text-align: right;"><strong>' . sprintf('%.2f', $totalbillable) . '</strong></td>'
+           . '</tr>';
 
   $output .= '</table>';
 
@@ -50,9 +60,10 @@ function kprojectreports_billable($start, $end, $report) {
 }
 
 function kprojectreports_billable_get_summary_global($date_start, $date_end) {
+  global $user;
   $report_lines = array();
 
-  $sql = "SELECT ktask_kcontract_node.title, ktask_kcontract_node.nid, sum(kpunch.duration) / 60 / 60 as periodhours
+  $sql = "SELECT ktask_kcontract_node.title, kcontract.lead, ktask_kcontract_node.nid, sum(kpunch.duration) / 60 / 60 as periodhours
           FROM {kpunch} kpunch
           LEFT JOIN {node} node_kpunch ON kpunch.nid = node_kpunch.nid
           INNER JOIN {users} users ON kpunch.uid = users.uid
@@ -62,6 +73,8 @@ function kprojectreports_billable_get_summary_global($date_start, $date_end) {
           WHERE kpunch.billable_client = 1
             AND kpunch.order_reference = 0
             AND kcontract.state NOT IN (" . KPROJECT_CONTRACT_STATE_CLOSED . ',' . KPROJECT_CONTRACT_STATE_LOST . ',' . KPROJECT_CONTRACT_STATE_CANCELED . ")
+            " . ($_REQUEST['uid'] ? "AND kcontract.lead = " . intval($_REQUEST['uid']) : '') . "
+            " . ($_REQUEST['uid_current'] ? " AND kcontract.lead = " . $user->uid : '') . "
           GROUP BY ktask_kcontract_node.nid";
 
   $result = db_query($sql);
@@ -87,10 +100,14 @@ function kprojectreports_billable_get_summary_global($date_start, $date_end) {
       $client = t("Error: Could not find the contract information!");
     }
 
+    // Fetch lead username
+    $contract->lead = kprojectreports_billable_get_username($contract->lead);
+
     $report_lines[$client][] = array(
       'client_id'      => $clientid,
       'project_id'     => $projectid,
       'contract_title' => $contract->title,
+      'contract_lead'  => $contract->lead,
       'client_title'   => $client,
       'hours_period'   => $contract->periodhours,
       'hours_total'    => $contract_total,
@@ -101,3 +118,15 @@ function kprojectreports_billable_get_summary_global($date_start, $date_end) {
   ksort($report_lines);
   return $report_lines;
 }
+
+function kprojectreports_billable_get_username($uid) {
+  static $usernames;
+
+  if (isset($usernames[$uid])) {
+    return $usernames[$uid];
+  }
+
+  $usernames[$uid] = db_result(db_query('SELECT name FROM {users} WHERE uid = %d', $uid));
+  return $usernames[$uid];
+}
+
