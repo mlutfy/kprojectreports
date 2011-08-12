@@ -108,7 +108,7 @@ function kprojectreports_cron() {
 
         // Add introduction, if any
         if ($report->intro) {
-          $output = '<p>' . $report->intro . '</p>';
+          $output = '<p>' . $report->intro . '</p>' . $output;
         }
 
         // Add a footer to inform about the origin
