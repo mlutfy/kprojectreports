@@ -112,7 +112,10 @@ function kprojectreports_cron() {
         }
 
         // Add a footer to inform about the origin
-        $output .= '<p>' . 'This is an automated report sent from ' . $servername . '. For more information, contact: ' . $emailfrom . '</p>';
+        $output .= '<p>' . t('This is an automated report sent from %server. For more information, contact: %emailfrom.', array('%server' => $servername, '%emailfrom' => $emailfrom)) . '</p>';
+        $output .= '<ul><li>' . l(t('View online (requires authentication)'), 'admin/settings/kprojectreports/' . $report->krid . '/preview', array('query' => 'daterun=' . date('Y-m-d', time()), 'absolute' => TRUE)) . '</li>';
+        $output .= '<li>' . l(t('Edit report parameters (requires authentication)'), 'admin/settings/kprojectreports/' . $report->krid, array('absolute' => TRUE)) . '</li>';
+        $output .= '</ul>';
   
         $message = array(
           'to' => $mail,
