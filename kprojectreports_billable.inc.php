@@ -1,5 +1,9 @@
 <?php
 
+function kprojectreports_billable_datehelp() {
+  return t("This date field is not used by this report. However, there are magic parameters you can add to the preview URL: ?uid=X or ?current_uid=1. The former will generate a report only for that user (you can find the uid by looking in admin/user/user. The latter will generate a report only for your contracts.");
+}
+
 function kprojectreports_billable($start, $end, $report) {
   $output = '';
   $exclude_clients = array('Koumbit'); // HARDCODE XXX FIXME
