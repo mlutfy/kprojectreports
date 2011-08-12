@@ -1,14 +1,25 @@
 <?php
 
 function kprojectreports_billable_datehelp() {
-  return t("This date field is not used by this report. However, there are magic parameters you can add to the preview URL: ?uid=X or ?current_uid=1. The former will generate a report only for that user (you can find the uid by looking in admin/user/user. The latter will generate a report only for your contracts.");
+  return t("Enter a date to show billable hours up to that date (end date NOT included). Also, there are magic parameters you can add to the preview URL: ?uid=X or ?current_uid=1. The former will generate a report only for that user (you can find the uid by looking in admin/user/user. The latter will generate a report only for your contracts.");
 }
 
+/**
+ * start : not used
+ * end : all hours until that date
+ */
 function kprojectreports_billable($start, $end, $report) {
   $output = '';
   $exclude_clients = array('Koumbit'); // HARDCODE XXX FIXME
 
-  $report_lines = kprojectreports_billable_get_summary_global($date_start, $date_end);
+  if (isset($_REQUEST['daterun'])) {
+    $date_end = strtotime(check_plain($_REQUEST['daterun']));
+    drupal_set_message('End date: ' . check_plain($_REQUEST['daterun']));
+  } else {
+    $date_end = time();
+  }
+
+  $report_lines = kprojectreports_billable_get_summary_global($date_end);
 
   $output .= '<table>';
   $output .= '<tr>'
@@ -63,7 +74,7 @@ function kprojectreports_billable($start, $end, $report) {
   return $output;
 }
 
-function kprojectreports_billable_get_summary_global($date_start, $date_end) {
+function kprojectreports_billable_get_summary_global($date_end) {
   global $user;
   $report_lines = array();
 
@@ -79,9 +90,10 @@ function kprojectreports_billable_get_summary_global($date_start, $date_end) {
             AND kcontract.state NOT IN (" . KPROJECT_CONTRACT_STATE_CLOSED . ',' . KPROJECT_CONTRACT_STATE_LOST . ',' . KPROJECT_CONTRACT_STATE_CANCELED . ")
             " . ($_REQUEST['uid'] ? "AND kcontract.lead = " . intval($_REQUEST['uid']) : '') . "
             " . ($_REQUEST['uid_current'] ? " AND kcontract.lead = " . $user->uid : '') . "
+            AND kpunch.begin < %d
           GROUP BY ktask_kcontract_node.nid";
 
-  $result = db_query($sql);
+  $result = db_query($sql, $date_end);
 
   while ($contract = db_fetch_object($result)) {
     // Fetch client name and estimate for contract

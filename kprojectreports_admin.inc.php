@@ -386,6 +386,10 @@ function kprojectreports_preview_form_submit($form, &$form_state) {
   $daterun = check_plain($form_state['values']['daterun']);
   $daterun = substr($daterun, 0, 10); // grab only the date part, not time
 
-  drupal_goto('admin/settings/kprojectreports/' . $reportid . '/preview', 'daterun=' . $daterun);
+  // Other parameters used in some reports (Ex: billable)
+  $uid_current = ($_REQUEST['uid_current'] ? '&uid_current=1' : '');
+  $uid = ($_REQUEST['uid'] ? '&uid=' . $_REQUEST['uid'] : '');
+
+  drupal_goto('admin/settings/kprojectreports/' . $reportid . '/preview', 'daterun=' . $daterun . $uid_current . $uid);
 }
 
