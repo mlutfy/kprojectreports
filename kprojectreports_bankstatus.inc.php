@@ -13,7 +13,7 @@ function kprojectreports_bankstatus($start, $end, $report) {
     $now = time();
   }
 
-  // TODO: 
+  // TODO:
   // - calculate if hours estimated
   // - check at what % we were supposed to send a warning
 
@@ -47,15 +47,13 @@ function kprojectreports_bankstatus($start, $end, $report) {
 
     default:
       $date_start = kprojectreports_unixdatefromarray($report->options['bankstatus_startdate']);
-
   }
 
   $date_end = $now;
-
   $totalhours = 0;
 
   // Fetch contract name
-  $contractname = db_result(db_query("SELECT node.title FROM {node} WHERE nid = %d", $contractid));
+  $contractname = db_query("SELECT node.title FROM {node} WHERE nid = :nid", array(':nid' => $contractid))->fetchField();
 
   // Show work summary (by task)
   $output .= "<h1>" . "Summary by task" . "</h1>";
@@ -71,14 +69,14 @@ function kprojectreports_bankstatus($start, $end, $report) {
           LEFT JOIN {ktask} node_kpunch__ktask ON node_kpunch.vid = node_kpunch__ktask.vid
           LEFT JOIN {node} ktask_kcontract_node ON node_kpunch__ktask.parent = ktask_kcontract_node.nid
           LEFT JOIN {node} ktask_ktask_node ON node_kpunch__ktask.nid = ktask_ktask_node.nid
-          WHERE kpunch.begin >= %d
-            AND kpunch.begin + kpunch.duration <= %d
-            AND ktask_kcontract_node.nid = %d
+          WHERE kpunch.begin >= :begin
+            AND kpunch.begin + kpunch.duration <= :end
+            AND ktask_kcontract_node.nid = :nid
 	  GROUP BY ktask_ktask_node.nid";
 
-  $result = db_query($sql, $date_start, $date_end, $contractid);
+  $result = db_query($sql, array(':begin' => $date_start, ':end' => $date_end, ':nid' => $contractid));
 
-  while ($contract = db_fetch_object($result)) {
+  foreach ($result as $contract) {
     $output .= "<tr><td>" . $contract->tasktitle . '</td><td style="text-align: right;">' . sprintf('%.2f', $contract->totalhours) . " " . "h" ."</td></tr>";
     $totalhours += $contract->totalhours;
   }
@@ -94,7 +92,7 @@ function kprojectreports_bankstatus($start, $end, $report) {
              . '<th>' . t('User') . '</th>'
              . '<th style="text-align: right;">' . t('Worked') . '</th>'
              . '</tr>';
-  
+
     $sql = "SELECT ktask_ktask_node.title as tasktitle, sum(kpunch.duration) / 60 / 60 as totalhours, users.name as username
             FROM {kpunch} kpunch
             LEFT JOIN {node} node_kpunch ON kpunch.nid = node_kpunch.nid
@@ -102,20 +100,20 @@ function kprojectreports_bankstatus($start, $end, $report) {
             LEFT JOIN {ktask} node_kpunch__ktask ON node_kpunch.vid = node_kpunch__ktask.vid
             LEFT JOIN {node} ktask_kcontract_node ON node_kpunch__ktask.parent = ktask_kcontract_node.nid
             LEFT JOIN {node} ktask_ktask_node ON node_kpunch__ktask.nid = ktask_ktask_node.nid
-            WHERE kpunch.begin >= %d
-              AND kpunch.begin + kpunch.duration <= %d
-              AND ktask_kcontract_node.nid = %d
+            WHERE kpunch.begin >= :begin
+              AND kpunch.begin + kpunch.duration <= :end
+              AND ktask_kcontract_node.nid = :nid
   	  GROUP BY users.uid";
-  
-    $result = db_query($sql, $date_start, $date_end, $contractid);
-  
-    while ($contract = db_fetch_object($result)) {
+
+    $result = db_query($sql, array(':begin' => $date_start, ':end' => $date_end, ':nid' => $contractid));
+
+    foreach ($result as $contract) {
       $output .= "<tr><td>" . $contract->username . '</td>'
                . '<td style="text-align: right;">' . sprintf('%.2f', $contract->totalhours) . " " . "h" ."</td></tr>";
     }
-  
+
     $output .= "</table>";
-  
+
     // Show all punches
     $output .= "<h1>" . "All punches" . "</h1>";
     $output .= "<table>";
@@ -126,7 +124,7 @@ function kprojectreports_bankstatus($start, $end, $report) {
              . '<th style="text-align: right;">' . t('Worked') . '</th>'
              . '<th>' . t('Comment')   . '</th>'
              . '</tr>';
-  
+
     $sql = "SELECT from_unixtime(kpunch.begin) as begin, kpunch.comment, ktask_ktask_node.title as tasktitle, users.name as username, kpunch.duration / 60 / 60 as totalhours
             FROM {kpunch} kpunch
             LEFT JOIN {node} node_kpunch ON kpunch.nid = node_kpunch.nid
@@ -134,20 +132,20 @@ function kprojectreports_bankstatus($start, $end, $report) {
             LEFT JOIN {ktask} node_kpunch__ktask ON node_kpunch.vid = node_kpunch__ktask.vid
             LEFT JOIN {node} ktask_kcontract_node ON node_kpunch__ktask.parent = ktask_kcontract_node.nid
             LEFT JOIN {node} ktask_ktask_node ON node_kpunch__ktask.nid = ktask_ktask_node.nid
-            WHERE kpunch.begin >= %d
-              AND kpunch.begin + kpunch.duration <= %d
-              AND ktask_kcontract_node.nid = %d";
-  
-    $result = db_query($sql, $date_start, $date_end, $contractid);
-  
-    while ($contract = db_fetch_object($result)) {
+            WHERE kpunch.begin >= :begin
+              AND kpunch.begin + kpunch.duration <= :end
+              AND ktask_kcontract_node.nid = :nid";
+
+    $result = db_query($sql, array(':begin' => $date_start, ':end' => $date_end, ':nid' => $contractid));
+
+    foreach ($result as $contract) {
       $output .= "<tr><td>" . $contract->begin . '</td>'
                . '<td>' . $contract->tasktitle . '</td>'
                . '<td>' . $contract->username . '</td>'
                . '<td style="text-align: right;">' . sprintf('%.2f', $contract->totalhours) . " h" . '</td>'
                . '<td>' . $contract->comment . '</td></tr>';
     }
-  
+
     $output .= "</table>";
   }
 

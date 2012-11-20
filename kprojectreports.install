@@ -1,6 +1,9 @@
 <?php
 
-function kprojectreports_schema($value='') {
+/**
+ * Implements hook_schema().
+ */
+function kprojectreports_schema($value = '') {
   $schema['kprojectreports_schedules'] = array(
     'description' => t('Kproject report schedules'),
     'fields' => array(
@@ -58,44 +61,8 @@ function kprojectreports_schema($value='') {
 }
 
 function kprojectreports_install() {
-  drupal_install_schema('kprojectreports');
 }
 
 function kprojectreports_uninstall() {
-  drupal_uninstall_schema('kprojectreports');
-}
-
-function kprojectreports_update_6100() {
-  drupal_install_schema('kprojectreports');
-}
-
-/**
- * Add "lastrun" field, so that cron knows whether we have run already today
- */
-function kprojectreports_update_6101() {
-  $ret = array();
-  db_add_field(&$ret, 'kprojectreports_schedules', 'lastrun', array('description' => t('Report last run timestamp.'), 'type' => 'int', 'not null' => FALSE, 'disp-width' => '11'));
-
-  return $ret;
-}
-
-/**
- * Add "options" field, so that specific reports or other modules can define other options
- */
-function kprojectreports_update_6102() {
-  $ret = array();
-  db_add_field(&$ret, 'kprojectreports_schedules', 'options', array('description' => t('Report options, may be defined by other modules.'), 'type' => 'text'));
-
-  return $ret;
-}
-
-/**
- * Add "intro" field, so that we can explain to clients why they are getting this e-mail
- */
-function kprojectreports_update_6103() {
-  $ret = array();
-  db_add_field(&$ret, 'kprojectreports_schedules', 'intro', array('description' => t('Report introduction text to be included in the e-mails.'), 'type' => 'text'));
-
-  return $ret;
 }
 

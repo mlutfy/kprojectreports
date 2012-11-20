@@ -1,7 +1,5 @@
-; $Id$
-
 name = Koumbit Project Reports
 description = Koumbit project reports
 package = kProject reports
 dependencies[] = ktimetracker
-core = 6.x
+core = 7.x

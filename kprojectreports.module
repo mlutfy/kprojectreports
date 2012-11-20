@@ -4,14 +4,22 @@
  * Implementation of hook_menu().
  */
 function kprojectreports_menu() {
-  $items['admin/settings/kprojectreports'] = array(
+  $items['kprojectreports'] = array(
     'title' => 'Kproject Reports Settings',
     'page callback' => 'kprojectreports_admin_listreports',
     'access arguments' => array('manage projects'),
     'file' => 'kprojectreports_admin.inc.php',
   );
 
-  $items['admin/settings/kprojectreports/%'] = array(
+  $items['kprojectreports/%kprojectreport'] = array(
+    'title' => 'Kproject Reports: Preview report',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('kprojectreports_preview_form', 1),
+    'access arguments' => array('manage projects'),
+    'file' => 'kprojectreports_admin.inc.php',
+  );
+
+  $items['kprojectreports/%kprojectreport/edit'] = array(
     'title' => 'Kproject Reports: Edit report',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('kprojectreports_admin_editreport', 3),
@@ -19,7 +27,7 @@ function kprojectreports_menu() {
     'file' => 'kprojectreports_admin.inc.php',
   );
 
-  $items['admin/settings/kprojectreports/add'] = array(
+  $items['kprojectreports/add'] = array(
     'title' => 'Kproject Reports: New report',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('kprojectreports_admin_editreport', 'add'),
@@ -27,15 +35,7 @@ function kprojectreports_menu() {
     'file' => 'kprojectreports_admin.inc.php',
   );
 
-  $items['admin/settings/kprojectreports/%kprojectreport/preview'] = array(
-    'title' => 'Kproject Reports: Preview report',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('kprojectreports_preview_form', 3),
-    'access arguments' => array('manage projects'),
-    'file' => 'kprojectreports_admin.inc.php',
-  );
-
-  $items['admin/settings/kprojectreports/%kprojectreport/delete'] = array(
+  $items['kprojectreports/%kprojectreport/delete'] = array(
     'page callback' => 'drupal_get_form',
     'page arguments' => array('kprojectreports_delete_form', 3),
     'access arguments' => array('manage projects'),
@@ -46,8 +46,7 @@ function kprojectreports_menu() {
 }
 
 function kprojectreport_load($krid) {
-  $result = db_query('SELECT * FROM {kprojectreports_schedules} WHERE krid=%d', $krid);
-  return db_fetch_object($result);
+  return db_query('SELECT * FROM {kprojectreports_schedules} WHERE krid = :krid', array(':krid' => $krid))->fetchObject();
 }
 
 function kprojectreports_cron() {
@@ -59,7 +58,7 @@ function kprojectreports_cron() {
 
   $result = db_query("SELECT * FROM {kprojectreports_schedules}");
 
-  while ($report = db_fetch_object($result)) {
+  foreach ($result as $report) {
     // Warning: no doubt the worst method ever. Too tired, I don't care.
     // The mktime() stuff works with edge case (new year, new month) because:
     // echo mktime(23,59,59, 1, 1 - 1, 2009); = 1230785999
@@ -113,8 +112,8 @@ function kprojectreports_cron() {
 
         // Add a footer to inform about the origin
         $output .= '<p>' . t('This is an automated report sent from %server. For more information, contact: %emailfrom.', array('%server' => $servername, '%emailfrom' => $emailfrom)) . '</p>';
-        $output .= '<ul><li>' . l(t('View online (requires authentication)'), 'admin/settings/kprojectreports/' . $report->krid . '/preview', array('query' => 'daterun=' . date('Y-m-d', time()), 'absolute' => TRUE)) . '</li>';
-        $output .= '<li>' . l(t('Edit report parameters (requires authentication)'), 'admin/settings/kprojectreports/' . $report->krid, array('absolute' => TRUE)) . '</li>';
+        $output .= '<ul><li>' . l(t('View online (requires authentication)'), 'kprojectreports/' . $report->krid . '/preview', array('query' => 'daterun=' . date('Y-m-d', time()), 'absolute' => TRUE)) . '</li>';
+        $output .= '<li>' . l(t('Edit report parameters (requires authentication)'), 'kprojectreports/' . $report->krid, array('absolute' => TRUE)) . '</li>';
         $output .= '</ul>';
   
         $message = array(
@@ -127,7 +126,7 @@ function kprojectreports_cron() {
         drupal_mail_send($message);
       }
 
-      db_query("UPDATE {kprojectreports_schedules} SET lastrun = UNIX_TIMESTAMP() WHERE krid = %d", $report->krid);
+      db_query("UPDATE {kprojectreports_schedules} SET lastrun = UNIX_TIMESTAMP() WHERE krid = :krid", array(':krid' => $report->krid));
     }
   }
 }
@@ -135,3 +134,4 @@ function kprojectreports_cron() {
 function kprojectreports_unixdatefromarray($a) {
   return mktime(0, 0, 0, $a['month'], $a['day'], $a['year']);
 }
+

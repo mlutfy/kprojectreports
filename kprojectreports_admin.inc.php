@@ -19,7 +19,7 @@ function kprojectreports_admin_availablereports() {
 function kprojectreports_admin_listreports()  {
   global $base_path;
 
-  $result = db_query("SELECT krid,title,frequency,report,mail FROM {kprojectreports_schedules} ORDER BY krid ASC");
+  $result = db_query("SELECT krid, title, frequency, report, mail FROM {kprojectreports_schedules} ORDER BY krid ASC");
 
   $header = array(
     'krid' => array('data' => 'ID', 'field' => 'krid'),
@@ -63,8 +63,7 @@ function kprojectreports_admin_editreport(&$form_state, $report = 'add')  {
 
   // Fetch previous values of the report (to set default values)
   if (is_numeric($report)) {
-    $result = db_query("SELECT * FROM {kprojectreports_schedules} WHERE krid = %d", intval($report));
-    $data = db_fetch_array($result);
+    $data = db_query("SELECT * FROM {kprojectreports_schedules} WHERE krid = :krid", array(':krid' => intval($report)))->fetchArray();
 
     if ($data['options']) {
       $data['options'] = unserialize($data['options']);
@@ -215,9 +214,9 @@ function kprojectreports_admin_editreport_submit($form, &$form_state) {
 
     if (count($options)) {
       db_query("UPDATE {kprojectreports_schedules} 
-                SET options = '%s'
-                WHERE krid = %d",
-                serialize($options), $form_state['values']['krid']);
+                SET options = :options
+                WHERE krid = :krid",
+                array(':options' => serialize($options), ':krid' => $form_state['values']['krid']));
     }
 
     drupal_set_message(t("Your report schedule has been updated."));
@@ -251,14 +250,19 @@ function kprojectreports_admin_editreport_submit($form, &$form_state) {
   $intro     = filter_xss($form_state['values']['intro']);
 
   if ($krid == 'add') {
-    db_query("INSERT INTO {kprojectreports_schedules} (title, frequency, report, mail, format, intro)
-              VALUES ('%s', '%s', '%s', '%s', '%s', '%s')",
-              $title, $frequency, $report, $mail, $format, $intro);
+    $insert = db_insert('kprojectreports_schedules');
+    $insert->fields(array(
+      'title' => $title,
+      'frequency' => $frequency,
+      'report' => $report,
+      'mail' => $mail,
+      'format' => $format,
+      'intro' => $intro,
+    ));
 
     // Store the ID of the newly created report so that the next step ("edit more options, if any")
     // can save its preferences.
-
-    $form_state['values']['krid'] = db_last_insert_id("kprojectreports_schedules", 'krid');
+    $form_state['values']['krid'] = $insert->execute();
 
     if ($form_state['rebuild']) {
       drupal_set_message(t("The following options specific to this reports must be filled in."));
@@ -267,14 +271,14 @@ function kprojectreports_admin_editreport_submit($form, &$form_state) {
     }
   } else {
     db_query("UPDATE {kprojectreports_schedules} 
-              SET title = '%s',
-                  frequency = '%s', 
-                  report = '%s',
-                  mail = '%s',
-                  format = '%s',
-                  intro = '%s'
-              WHERE krid = %d",
-              $title, $frequency, $report, $mail, $format, $intro, $krid);
+              SET title = :title,
+                  frequency = :frequency,
+                  report = :report,
+                  mail = :mail,
+                  format = :format,
+                  intro = :intro,
+              WHERE krid = :krid",
+              array(':title' => $title, ':frequency' => $frequency, ':report' => $report, ':mail' => $mail, ':format' => $format, ':intro' => $intro, ':krid' => $krid));
 
     if (! $form_state['rebuild']) {
       drupal_set_message(t("Your report schedule has been updated."));
@@ -303,13 +307,13 @@ function kprojectreports_delete_form_submit($form, &$form_state) {
 }
 
 function kprojectreports_report_delete($krid) {
-  db_query('DELETE FROM {kprojectreports_schedules} WHERE krid = %d', $krid);
+  db_query('DELETE FROM {kprojectreports_schedules} WHERE krid = :krid', array(':krid' => $krid));
 } 
 
 /**
  * Preview a report on screen
  */
-function kprojectreports_preview_form($form_state, $report = NULL, $params = NULL) {
+function kprojectreports_preview_form($form, $form_state, $report = NULL, $params = NULL) {
   $daterun = date('Y-m-d', time());
   $reporttitle = $report->title;
 
@@ -369,12 +373,12 @@ function kprojectreports_preview_form($form_state, $report = NULL, $params = NUL
 
   $form['reportdata']['intro'] = array(
     '#type' => 'markup',
-    '#value' => '<p>' . $report->intro . '</p>',
+    '#markup' => '<p>' . $report->intro . '</p>',
   );
 
   $form['reportdata']['output'] = array(
     '#type' => 'markup',
-    '#value' => $output,
+    '#markup' => $output,
   );
 
   return $form;
