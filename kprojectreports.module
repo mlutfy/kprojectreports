@@ -22,7 +22,7 @@ function kprojectreports_menu() {
   $items['kprojectreports/%kprojectreport/edit'] = array(
     'title' => 'Kproject Reports: Edit report',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('kprojectreports_admin_editreport', 3),
+    'page arguments' => array('kprojectreports_admin_editreport', 1),
     'access arguments' => array('manage projects'),
     'file' => 'kprojectreports_admin.inc.php',
   );
@@ -37,7 +37,7 @@ function kprojectreports_menu() {
 
   $items['kprojectreports/%kprojectreport/delete'] = array(
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('kprojectreports_delete_form', 3),
+    'page arguments' => array('kprojectreports_delete_form', 1),
     'access arguments' => array('manage projects'),
     'file' => 'kprojectreports_admin.inc.php',
   );
@@ -45,10 +45,24 @@ function kprojectreports_menu() {
   return $items;
 }
 
+/**
+ * Implements hook_load() for %kprojectreport
+ */
 function kprojectreport_load($krid) {
-  return db_query('SELECT * FROM {kprojectreports_schedules} WHERE krid = :krid', array(':krid' => $krid))->fetchObject();
+  $report = db_query('SELECT * FROM {kprojectreports_schedules} WHERE krid = :krid', array(':krid' => $krid))->fetchObject();
+
+  if (! empty($report->options)) {
+    $report->options = unserialize($report->options);
+  }
+
+  return $report;
 }
 
+/**
+ * Implements hook_cron().
+ *
+ * Sends the reports by e-mail, at pre-configured schedules.
+ */
 function kprojectreports_cron() {
   include_once(drupal_get_path('module', 'kprojectreports') .'/kprojectreports_frequency.inc.php');
 
