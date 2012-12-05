@@ -19,6 +19,7 @@ function kprojectreports_admin_availablereports() {
 function kprojectreports_admin_listreports()  {
   global $base_path;
 
+  $output = '';
   $result = db_query("SELECT krid, title, frequency, report, mail FROM {kprojectreports_schedules} ORDER BY krid ASC");
 
   $header = array(
@@ -27,29 +28,35 @@ function kprojectreports_admin_listreports()  {
     'frequency' => array('data' => t('Frequency'), 'field' => 'frequency'),
     'report' => array('data' => t('Report'), 'field' => 'report'),
     'mail' => array('data' => t('E-mail'), 'field' => 'mail'),
-    'action' => array('data' => t('Actions'), 'field' => 'action'),
+    'action' => array('data' => t('Actions'), 'field' => 'action', ),
   );
 
   $items = array();
 
-  while ($row = db_fetch_array($result)) {
+  foreach ($result as $record) {
     $img_edit   = '<img src="' . $base_path . drupal_get_path('module', 'kprojectreports') . '/images/edit.png" alt="' . t('edit') . '" />';
     $img_delete = '<img src="' . $base_path . drupal_get_path('module', 'kprojectreports') . '/images/delete.png" alt="' . t('delete') . '" />';
     $img_preview = '<img src="' . $base_path . drupal_get_path('module', 'kprojectreports') . '/images/preview.png" alt="' . t('preview') . '" />';
 
-    $row['action']  = l($img_edit, 'admin/settings/kprojectreports/' . $row['krid'], array('html' => TRUE, 'attributes' => array('title' => t('edit'))));
-    $row['action'] .= " ";
-    $row['action'] .= l($img_delete, 'admin/settings/kprojectreports/' . $row['krid'] . '/delete', array('html' => TRUE, 'attributes' => array('title' => t('delete'))));
-    $row['action'] .= " ";
-    $row['action'] .= l($img_preview, 'admin/settings/kprojectreports/' . $row['krid'] . '/preview', array('html' => TRUE, 'attributes' => array('title' => t('preview'))));
-    $items[] = $row;
+    $record->action  = l($img_edit, 'kprojectreports/' . $record->krid, array('html' => TRUE, 'attributes' => array('title' => t('edit'))));
+    $record->action .= " ";
+    $record->action .= l($img_delete, 'kprojectreports/' . $record->krid . '/delete', array('html' => TRUE, 'attributes' => array('title' => t('delete'))));
+    $record->action .= " ";
+    $record->action .= l($img_preview, 'kprojectreports/' . $record->krid . '/preview', array('html' => TRUE, 'attributes' => array('title' => t('preview'))));
+    $items[] = (array) $record;
   }
 
   if (count($items)) {
-    $output .= theme('table', $header, $items);
+    $variables = array(
+      'header' => $header,
+      'rows' => $items,
+      'sticky' => 1,
+    );
+
+    $output .= theme('table', $variables);
   }
 
-  $output .= "<p>" . l(t("Schedule a new report"), "admin/settings/kprojectreports/add") . "</p>";
+  $output .= "<p>" . l(t("Schedule a new report"), "kprojectreports/add") . "</p>";
 
   return $output;
 }
@@ -57,18 +64,8 @@ function kprojectreports_admin_listreports()  {
 /**
  * Form to schedule a new or existing report
  */
-function kprojectreports_admin_editreport(&$form_state, $report = 'add')  {
+function kprojectreports_admin_editreport($form, &$form_state, $report = 'add')  {
   $form = array();
-  $data = array();
-
-  // Fetch previous values of the report (to set default values)
-  if (is_numeric($report)) {
-    $data = db_query("SELECT * FROM {kprojectreports_schedules} WHERE krid = :krid", array(':krid' => intval($report)))->fetchArray();
-
-    if ($data['options']) {
-      $data['options'] = unserialize($data['options']);
-    }
-  }
 
   // Allow specific reports to add configuration elements to a report
   // (ex: start of financial year, pay day, quarter, etc.)
@@ -90,7 +87,7 @@ function kprojectreports_admin_editreport(&$form_state, $report = 'add')  {
     $f = 'kprojectreports_frequency_editreport_' . $form_state['values']['frequency'];
 
     if (function_exists($f)) {
-      $f($form_state, $form, $data);
+      $f($form_state, $form, $report);
     }
 
     // Other options from the report
@@ -98,10 +95,10 @@ function kprojectreports_admin_editreport(&$form_state, $report = 'add')  {
     $f = $form_state['values']['report'] . '_editreport_addtoform';
 
     if (function_exists($f)) {
-      $f($form_state, $form, $data);
+      $f($form_state, $form, $report);
     }
 
-    $form['#redirect'] = 'admin/settings/kprojectreports';
+    $form['#redirect'] = 'kprojectreports';
 
     $form['submit'] = array(
       '#type' => 'submit',
@@ -114,7 +111,7 @@ function kprojectreports_admin_editreport(&$form_state, $report = 'add')  {
 
   $form['krid'] = array(
     '#type' => 'value',
-    '#value' => $report,
+    '#value' => (is_object($report) ? $report->krid : 'add'),
   );
 
   $form['step'] = array(
@@ -125,14 +122,14 @@ function kprojectreports_admin_editreport(&$form_state, $report = 'add')  {
   $form['title'] = array(
     '#type' => 'textfield',
     '#title' => t('Title'),
-    '#default_value' => $data['title'],
+    '#default_value' => (empty($report->title) ? '' : $report->title),
     '#required' => TRUE,
   );
 
   $form['frequency'] = array(
     '#type' => 'select',
     '#title' => t('Frequency'),
-    '#default_value' => $data['frequency'],
+    '#default_value' => (empty($report->frequency) ? '' : $report->frequency),
     '#options' => array(
       'day' => 'Every day',
       'week' => 'Every week',
@@ -150,35 +147,22 @@ function kprojectreports_admin_editreport(&$form_state, $report = 'add')  {
     '#title' => t('Report'),
     '#required' => TRUE,
     '#options' => kprojectreports_admin_availablereports(),
-    '#default_value' => $data['report'],
+    '#default_value' => (empty($report->report) ? '' : $report->report),
   );
 
   $form['mail'] = array(
     '#type' => 'textfield',
     '#title' => 'Mail to',
-    '#default_value' => $data['mail'],
+    '#default_value' => (empty($report->mail) ? '' : $report->mail),
     '#description' => 'E-mail address which will receive the report. You may specify multiples addresses by separating them with a comma.',
     '#required' => TRUE,
   );
-
-  /* not used
-  $form['format'] = array(
-    '#type' => 'select',
-    '#title' => t('Format'),
-    '#default_value' => $data['format'],
-    '#options' => array(
-      'text' => 'Plain text',
-      'html' => 'HTML',
-      'csv'  => 'Comma separated values (csv)',
-    ),
-  );
-  */
 
   $form['intro'] = array(
     '#type' => 'textarea',
     '#title' => t('Introduction text'),
     '#description' => t('The introduction text will be displayed above the report. Useful for when sending the report to clients.'),
-    '#default_value' => $data['intro'],
+    '#default_value' => (empty($report->intro) ? '' : $report->intro),
   );
 
   $form['submit'] = array(
@@ -186,7 +170,7 @@ function kprojectreports_admin_editreport(&$form_state, $report = 'add')  {
     '#value' => t('Submit'),
   );
 
-  $form['#redirect'] = 'admin/settings/kprojectreports';
+  $form['#redirect'] = 'kprojectreports';
   return $form;
 }
 
@@ -294,7 +278,7 @@ function kprojectreports_delete_form($form_state, $report = NULL, $params = NULL
 
   return confirm_form($form,
     t('Are you sure you want to delete the report %reportname (#%krid)?', array('%reportname' => $report->title, '%krid' => $report->krid)),
-    isset($_GET['destination']) ? $_GET['destination'] : 'admin/settings/kprojectreports',
+    isset($_GET['destination']) ? $_GET['destination'] : 'kprojectreports',
     t('This action cannot be undone.'),
     t('Delete'),
     t('Cancel')
@@ -303,7 +287,7 @@ function kprojectreports_delete_form($form_state, $report = NULL, $params = NULL
 
 function kprojectreports_delete_form_submit($form, &$form_state) {
   kprojectreports_report_delete($form_state['values']['krid']);
-  $form_state['redirect'] = 'admin/settings/kprojectreports';
+  $form_state['redirect'] = 'kprojectreports';
 }
 
 function kprojectreports_report_delete($krid) {
@@ -394,6 +378,6 @@ function kprojectreports_preview_form_submit($form, &$form_state) {
   $uid_current = ($_REQUEST['uid_current'] ? '&uid_current=1' : '');
   $uid = ($_REQUEST['uid'] ? '&uid=' . $_REQUEST['uid'] : '');
 
-  drupal_goto('admin/settings/kprojectreports/' . $reportid . '/preview', 'daterun=' . $daterun . $uid_current . $uid);
+  drupal_goto('kprojectreports/' . $reportid . '/preview', 'daterun=' . $daterun . $uid_current . $uid);
 }
 
