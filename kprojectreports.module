@@ -116,7 +116,7 @@ function kprojectreports_cron() {
         $subject = $report->title;
 
         if (function_exists('token_replace')) {
-          $subject = token_replace($report->title, 'global');
+          $subject = token_replace($report->title); // D7: global/site now implicit?
         }
 
         // Add introduction, if any

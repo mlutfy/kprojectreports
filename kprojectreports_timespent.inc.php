@@ -199,20 +199,20 @@ function kprojectreports_timespent_get_summary_global($date_start, $date_end) {
           LEFT JOIN {node} node_kpunch ON kpunch.nid = node_kpunch.nid
           LEFT JOIN {ktask} node_kpunch__ktask ON node_kpunch.vid = node_kpunch__ktask.vid
           LEFT JOIN {node} ktask_kcontract_node ON node_kpunch__ktask.parent = ktask_kcontract_node.nid
-          WHERE kpunch.begin >= %d
-            AND kpunch.begin + kpunch.duration <= %d
+          WHERE kpunch.begin >= :begin
+            AND kpunch.begin + kpunch.duration <= :end
           GROUP BY ktask_kcontract_node.nid";
 
-  $result = db_query($sql, $date_start, $date_end);
+  $result = db_query($sql, array(':begin' => $date_start, ':end' => $date_end));
 
-  while ($contract = db_fetch_object($result)) {
+  foreach ($result as $contract) {
     // Fetch client name and estimate for contract
-    $res2  = db_query('SELECT kcid, parent, estimate FROM {kcontract} WHERE nid = %d', $contract->nid);
+    $res2  = db_query('SELECT kcid, parent, estimate FROM {kcontract} WHERE nid = :nid', array(':nid' => $contract->nid));
     $contract_total = 0;
     $contract_bytask = array();
 
-    if (($kcontract = db_fetch_object($res2))) {
-      $client = db_result(db_query('SELECT title FROM {node} WHERE nid = %d', $kcontract->parent));
+    if (($kcontract = $res2->fetchObject())) {
+      $client = db_query('SELECT title FROM {node} WHERE nid = :nid', array(':nid' => $kcontract->parent))->fetchField();
 
       // Fetch total number of hours worked on the project
       $sql3 = "SELECT sum(kpunch.duration) / 60 / 60 as totalhours
@@ -220,9 +220,9 @@ function kprojectreports_timespent_get_summary_global($date_start, $date_end) {
                LEFT JOIN {node} node_kpunch ON kpunch.nid = node_kpunch.nid
                LEFT JOIN {ktask} node_kpunch__ktask ON node_kpunch.vid = node_kpunch__ktask.vid
                LEFT JOIN {node} ktask_kcontract_node ON node_kpunch__ktask.parent = ktask_kcontract_node.nid
-               WHERE ktask_kcontract_node.nid = %d";
+               WHERE ktask_kcontract_node.nid = :nid";
   
-      $contract_total = db_result(db_query($sql3, $contract->nid));
+      $contract_total = db_query($sql3, array(':nid' => $contract->nid))->fetchField();
     } else {
       $client = t("Error: Could not find the contract information!");
     }
@@ -233,15 +233,15 @@ function kprojectreports_timespent_get_summary_global($date_start, $date_end) {
              LEFT JOIN {node} node_kpunch ON kpunch.nid = node_kpunch.nid
              LEFT JOIN {ktask} node_kpunch__ktask ON node_kpunch.vid = node_kpunch__ktask.vid
              LEFT JOIN {node} ktask_kcontract_node ON node_kpunch__ktask.parent = ktask_kcontract_node.nid
-             WHERE kpunch.begin >= %d
-               AND kpunch.begin + kpunch.duration <= %d
-               AND ktask_kcontract_node.nid = %d
+             WHERE kpunch.begin >= :begin
+               AND kpunch.begin + kpunch.duration <= :end
+               AND ktask_kcontract_node.nid = :nid
              GROUP BY kpunch.nid";
 
-    $res4 = db_query($sql4, $date_start, $date_end, $contract->nid);
+    $res4 = db_query($sql4, array(':begin' => $date_start, ':end' => $date_end, ':nid' => $contract->nid));
 
-    while ($row4 = db_fetch_array($res4)) {
-      $contract_bytask[$row4['title']] = array('hours_period' => $row4['periodhours']);
+    foreach ($res4 as $record4) {
+      $contract_bytask[$record4->title] = array('hours_period' => $record4->periodhours);
     }
 
     $report_lines[$client][] = array(
@@ -285,7 +285,7 @@ function kprojectreports_timespent_user($date_start, $date_end) {
 
   $result = db_query("select uid from users_roles where rid = 7"); // FIXME, HARDCODE XXX
 
-  while ($user = db_fetch_object($result)) {
+  foreach ($result as $user) {
     $user = user_load($user->uid);
     $report_lines = kprojectreports_timespent_get_summary_by_user($user->uid, $date_start, $date_end);
 
