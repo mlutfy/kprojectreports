@@ -60,9 +60,29 @@ function kprojectreports_schema($value = '') {
   return $schema;
 }
 
+/**
+ * Implements hook_install().
+ */
 function kprojectreports_install() {
 }
 
+/**
+ * Implements hook_uninstall().
+ */
 function kprojectreports_uninstall() {
+}
+
+/**
+ * Implements hook_enable().
+ */
+function kprojectreports_enable() {
+  mailsystem_set(array('kprojectreports' => 'HTMLMailSystem'));
+}
+
+/**
+ * Implements hook_disable().
+ */
+function kprojectreports_disable() {
+  mailsystem_set(array('kprojectreports' => ''));
 }
 

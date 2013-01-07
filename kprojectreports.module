@@ -87,7 +87,7 @@ function kprojectreports_cron() {
       // this is mainly to protect against cloning of sites during webdev
       $limithost = variable_get('kprojectreports_limithost', '');
       $servername = $_SERVER['HTTP_HOST'];
-      $emailfrom  = variable_get('site_mail', 'FIXME@FIXME.org');
+      $emailfrom  = variable_get('site_mail', 'FIXME@example.org');
 
       if ($limithost && $limithost != $servername) {
         watchdog('kprojectreports', 'Not mailing the report because the kprojectreports_limithost does not match the current host: ' . $limithost . ' vs ' . $servername);
@@ -102,13 +102,11 @@ function kprojectreports_cron() {
       $mails = explode(',', $report->mail);
 
       foreach ($mails as $mail) {
-        // TODO: use mimemail? (attach html, csv..)
-        // or c.f. http://api.drupal.org/api/function/drupal_mail/6
-        $header = array(
+        $headers = array(
           'Return-Path' => '<' . $emailfrom . '>',
           'Date' => date('r'),
           'From' => $emailfrom,
-          'X-Mailer' => 'koumbit-kprojectreports',
+          'X-Mailer' => 'kprojectreports',
           'Content-Type' => 'text/html; charset=UTF-8; format=flowed',
           'Mime-Version' => "1.0",
         );
@@ -126,18 +124,29 @@ function kprojectreports_cron() {
 
         // Add a footer to inform about the origin
         $output .= '<p>' . t('This is an automated report sent from %server. For more information, contact: %emailfrom.', array('%server' => $servername, '%emailfrom' => $emailfrom)) . '</p>';
-        $output .= '<ul><li>' . l(t('View online (requires authentication)'), 'kprojectreports/' . $report->krid . '/preview', array('query' => 'daterun=' . date('Y-m-d', time()), 'absolute' => TRUE)) . '</li>';
+        $output .= '<ul><li>' . l(t('View online (requires authentication)'), 'kprojectreports/' . $report->krid . '/preview', array('query' => array('daterun' => date('Y-m-d')), 'absolute' => TRUE)) . '</li>';
         $output .= '<li>' . l(t('Edit report parameters (requires authentication)'), 'kprojectreports/' . $report->krid, array('absolute' => TRUE)) . '</li>';
         $output .= '</ul>';
-  
+
+        // Send e-mail
         $message = array(
+          'id' => 'kprojectreports',
+          'module' => 'kprojectreports',
           'to' => $mail,
           'subject' => $subject,
-          'body' => $output,
-          'headers' => $header,
+          'body' => array($output),
+          'headers' => $headers,
         );
-  
-        drupal_mail_send($message);
+
+        $system = drupal_mail_system('kprojectreport', 'report');
+        $message = $system->format($message);
+      
+        if ($system->mail($message)) {
+          watchdog('kprojectreports', "Report sent to !dest: !subject", array('!dest' => $mail, '!subject' => $subject));
+        }
+        else {
+          watchdog('kprojectreports', "Failed to send e-mail for report to !dest: !subject", array('!dest' => $mail, '!subject' => $subject), WATCHDOG_ERROR);
+        }
       }
 
       db_query("UPDATE {kprojectreports_schedules} SET lastrun = UNIX_TIMESTAMP() WHERE krid = :krid", array(':krid' => $report->krid));
