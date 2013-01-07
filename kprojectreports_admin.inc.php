@@ -38,7 +38,7 @@ function kprojectreports_admin_listreports()  {
     $img_delete = '<img src="' . $base_path . drupal_get_path('module', 'kprojectreports') . '/images/delete.png" alt="' . t('delete') . '" />';
     $img_preview = '<img src="' . $base_path . drupal_get_path('module', 'kprojectreports') . '/images/preview.png" alt="' . t('preview') . '" />';
 
-    $record->action  = l($img_edit, 'kprojectreports/' . $record->krid, array('html' => TRUE, 'attributes' => array('title' => t('edit'))));
+    $record->action  = l($img_edit, 'kprojectreports/' . $record->krid . '/edit', array('html' => TRUE, 'attributes' => array('title' => t('edit'))));
     $record->action .= " ";
     $record->action .= l($img_delete, 'kprojectreports/' . $record->krid . '/delete', array('html' => TRUE, 'attributes' => array('title' => t('delete'))));
     $record->action .= " ";
