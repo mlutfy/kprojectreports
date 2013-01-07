@@ -352,7 +352,6 @@ function kprojectreports_preview_form($form, $form_state, $report = NULL, $param
   }
 
   $reportfunc = $report->report; // ex: kprojectreports_timespent
-  $report->options = unserialize($report->options);
   $output = $reportfunc($date_start, $date_end, $report);
 
   $form['reportdata']['intro'] = array(
@@ -374,10 +373,19 @@ function kprojectreports_preview_form_submit($form, &$form_state) {
   $daterun = check_plain($form_state['values']['daterun']);
   $daterun = substr($daterun, 0, 10); // grab only the date part, not time
 
-  // Other parameters used in some reports (Ex: billable)
-  $uid_current = ($_REQUEST['uid_current'] ? '&uid_current=1' : '');
-  $uid = ($_REQUEST['uid'] ? '&uid=' . $_REQUEST['uid'] : '');
+  $query = array(
+    'daterun' => $daterun,
+  );
 
-  drupal_goto('kprojectreports/' . $reportid . '/preview', 'daterun=' . $daterun . $uid_current . $uid);
+  // Other parameters used in some reports (Ex: billable)
+  if (isset($_REQUEST['uid_current'])) {
+    $query['uid_current'] = 1;
+  }
+
+  if (isset($_REQUEST['uid'])) {
+    $query['uid'] = $_REQUEST['uid'];
+  }
+
+  drupal_goto('kprojectreports/' . $reportid . '/preview', $query);
 }
 
