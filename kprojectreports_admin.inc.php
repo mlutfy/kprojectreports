@@ -303,7 +303,7 @@ function kprojectreports_preview_form($form, $form_state, $report = NULL, $param
 
   include_once(drupal_get_path('module', 'kprojectreports') .'/' . $report->report . '.inc.php');
 
-  if ($_REQUEST['daterun']) {
+  if (isset($_REQUEST['daterun'])) {
     $daterun = check_plain($_REQUEST['daterun']);
   }
 
@@ -373,19 +373,21 @@ function kprojectreports_preview_form_submit($form, &$form_state) {
   $daterun = check_plain($form_state['values']['daterun']);
   $daterun = substr($daterun, 0, 10); // grab only the date part, not time
 
-  $query = array(
-    'daterun' => $daterun,
+  $options = array(
+    'query' => array(
+      'daterun' => $daterun,
+    ),
   );
 
   // Other parameters used in some reports (Ex: billable)
   if (isset($_REQUEST['uid_current'])) {
-    $query['uid_current'] = 1;
+    $options['query']['uid_current'] = 1;
   }
 
   if (isset($_REQUEST['uid'])) {
-    $query['uid'] = $_REQUEST['uid'];
+    $options['query']['uid'] = $_REQUEST['uid'];
   }
 
-  drupal_goto('kprojectreports/' . $reportid . '/preview', $query);
+  drupal_goto('kprojectreports/' . $reportid . '/preview', $options);
 }
 
