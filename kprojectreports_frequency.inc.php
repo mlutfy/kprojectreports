@@ -24,7 +24,7 @@ function kprojectreports_frequency_editreport_week(&$form_state, &$form, $data) 
       6 => t('Saturday'),
       7 => t('Sunday'),
     ),
-    '#default_value' => $data['options']['week_firstday'],
+    '#default_value' => $data->options['week_firstday'],
     '#required' => TRUE,
   );
 }
@@ -43,7 +43,7 @@ function kprojectreports_frequency_editreport_week2(&$form_state, &$form, $data)
       6 => t('Saturday'),
       7 => t('Sunday'),
     ),
-    '#default_value' => $data['options']['week2_firstday'],
+    '#default_value' => $data->options['week2_firstday'],
     '#required' => TRUE,
   );
 
@@ -56,7 +56,7 @@ function kprojectreports_frequency_editreport_week2(&$form_state, &$form, $data)
       1 => t('Week') . ' 1',
       2 => t('Week') . ' 2',
     ),
-    '#default_value' => $data['options']['week2_firstweek'],
+    '#default_value' => $data->options['week2_firstweek'],
     '#required' => TRUE,
   );
 }

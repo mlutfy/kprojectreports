@@ -166,14 +166,14 @@ function kprojectreports_bankstatus_editreport_addtoform(&$form_state, &$form, $
     '#autocomplete_path' => 'kproject/autocomplete/kcontract',
     '#required' => TRUE,
     '#size' => 25,
-    '#default_value' => $data['options']['bankstatus_contactid'],
+    '#default_value' => $data->options['bankstatus_contactid'],
   );
 
   $form['option_bankstatus_type'] = array(
     '#type' => 'select',
     '#title' => t('Type'),
     '#required' => TRUE,
-    '#default_value' => $data['options']['bankstatus_type'],
+    '#default_value' => $data->options['bankstatus_type'],
     '#options' => array(
       ''        => '',
       'monthly' => 'Monthly',
@@ -186,7 +186,7 @@ function kprojectreports_bankstatus_editreport_addtoform(&$form_state, &$form, $
     '#type' => 'date',
     '#title' => t('Start date'),
     '#required' => FALSE,
-    '#default_value' => $data['options']['bankstatus_startdate'],
+    '#default_value' => $data->options['bankstatus_startdate'],
     '#description' => 'Ignore this field if it is a "monthly" type of agreement, e.g. 10h/month',
   );
 
@@ -194,14 +194,14 @@ function kprojectreports_bankstatus_editreport_addtoform(&$form_state, &$form, $
     '#type' => 'textfield',
     '#title' => t('Hours'),
     '#required' => TRUE,
-    '#default_value' => $data['options']['bankstatus_hours'],
+    '#default_value' => $data->options['bankstatus_hours'],
   );
 
   $form['option_bankstatus_showpunches'] = array(
     '#type' => 'select',
     '#title' => t('Display punch details'),
     '#required' => TRUE,
-    '#default_value' => $data['options']['bankstatus_showpunches'],
+    '#default_value' => $data->options['bankstatus_showpunches'],
     '#options' => array(
       0 => t("no"),
       1 => t("yes"),
@@ -212,7 +212,7 @@ function kprojectreports_bankstatus_editreport_addtoform(&$form_state, &$form, $
     '#type' => 'select',
     '#title' => t('Report at'),
     '#required' => TRUE,
-    '#default_value' => $data['options']['bankstatus_warnpercent'],
+    '#default_value' => $data->options['bankstatus_warnpercent'],
     '#options' => array(
       0 => '',
       1 => 'Every run',

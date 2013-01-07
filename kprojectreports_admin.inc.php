@@ -254,15 +254,16 @@ function kprojectreports_admin_editreport_submit($form, &$form_state) {
       drupal_set_message(t("Your report schedule has been added."));
     }
   } else {
-    db_query("UPDATE {kprojectreports_schedules} 
-              SET title = :title,
-                  frequency = :frequency,
-                  report = :report,
-                  mail = :mail,
-                  format = :format,
-                  intro = :intro,
-              WHERE krid = :krid",
-              array(':title' => $title, ':frequency' => $frequency, ':report' => $report, ':mail' => $mail, ':format' => $format, ':intro' => $intro, ':krid' => $krid));
+    $record = new StdClass();
+    $record->title = $title;
+    $record->frequency = $frequency;
+    $record->report = $report;
+    $record->mail = $mail;
+    $record->format = $format;
+    $record->intro = $intro;
+    $record->krid = $krid;
+
+    drupal_write_record('kprojectreports_schedules', $record, array('krid'));
 
     if (! $form_state['rebuild']) {
       drupal_set_message(t("Your report schedule has been updated."));
