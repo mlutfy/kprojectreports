@@ -42,6 +42,13 @@ function kprojectreports_menu() {
     'file' => 'kprojectreports_admin.inc.php',
   );
 
+  $items['kprojectreports/autocomplete'] = array(
+    'page callback' => 'kprojectreports_autocomplete_contract',
+    'page arguments' => array(2, 3),
+    'access arguments' => array('manage projects'),
+    'type' => MENU_CALLBACK,
+  );
+
   return $items;
 }
 
@@ -158,3 +165,31 @@ function kprojectreports_unixdatefromarray($a) {
   return mktime(0, 0, 0, $a['month'], $a['day'], $a['year']);
 }
 
+/**
+ * Autocomplete for the Contract name.
+ *
+ * Based on kproject_autocomplete_parent from kproject.module.
+ */
+function kprojectreports_autocomplete_contract($parent, $string = '') {
+  $matches = array();
+
+  // For legacy reasons, we support either:
+  // kproject/autocomplete/{kcontract,kclient,ktask}/search-term
+  // kproject/autocomplete/{kcontract,kclient,ktask}?term=search-term
+  if (! $string) {
+    $string = $_GET['term'];
+  }
+
+  if ($parent == 'kcontract' && $string) {
+    $result = db_query('SELECT id, subject FROM civicrm_case WHERE subject like :string', array(
+      ':string' => $string . '%',
+    ));
+
+    foreach ($result as $record) {
+      $s = $record->id .' ' . $record->subject;
+      $matches[$s] = $s;
+    }
+  }
+
+  drupal_json_output($matches);
+}

@@ -102,7 +102,7 @@ function kprojectreports_timespent_global($date_start, $date_end) {
   $outputexpenses .= '<tr>'
            . '<th width="300">' . t('Client')     . '</th>'
            . '<th>' . t('Contract')   . '</th>'
-           . '<th style="text-align: right;">' . t('Worked') . '</th>'
+           . '<th style="text-align: right;">' . t('Worked (h)') . '</th>'
            . '<th style="text-align: right;">' . t('% total') . '</th>'
            . '</tr>';
 
@@ -297,7 +297,7 @@ function kprojectreports_timespent_user($date_start, $date_end) {
     $outputincomes .= '<tr>'
              . '<th width="300">' . t('Client')     . '</th>'
              . '<th>' . t('Contract')   . '</th>'
-             . '<th style="text-align: right;">' . t('Worked') . '</th>'
+             . '<th style="text-align: right;">' . t('Worked (h)') . '</th>'
              . '<th style="text-align: right;">' . t('% total') . '</th>'
              . '</tr>';
   

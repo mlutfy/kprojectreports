@@ -1,7 +1,6 @@
 name = Koumbit Project Reports
 description = Koumbit project reports
 package = kProject reports
-dependencies[] = ktimetracker
 dependencies[] = mailsystem
 dependencies[] = htmlmail
 core = 7.x
